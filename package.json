@@ -1,0 +1,18 @@
+{
+  "name": "datainfra-redaction-everything",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "stop": "node scripts/stop-dev.mjs",
+    "dev:local": "node scripts/local/start-stack.mjs",
+    "stop:local": "node scripts/local/stop-stack.mjs",
+    "status:local": "node scripts/local/status-stack.mjs",
+    "model:has": "node scripts/local/download-models.mjs",
+    "check:text-model": "node scripts/check-text-model.mjs",
+    "frontend:dev": "npm --prefix frontend run dev"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  }
+}

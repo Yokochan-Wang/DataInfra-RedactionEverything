@@ -1,0 +1,40 @@
+# Windows-side dependencies for the FastAPI backend and model warmup.
+# This is backend/requirements.txt with the GPU model stacks removed:
+#   - paddlepaddle-gpu / paddleocr  -> installed in the WSL app venv (OCR on 8082)
+#   - llama-cpp-python[server]      -> legacy fallback helper only
+# Use it with: uv pip install -r scripts/local/requirements-windows-app.txt
+
+fastapi>=0.136.1
+uvicorn[standard]>=0.32.0
+python-multipart>=0.0.26
+
+pydantic>=2.10.0
+pydantic-settings>=2.7.0
+
+python-docx==1.2.0
+PyMuPDF==1.27.2.2
+Pillow>=12.2.0
+numpy>=2.0.0
+openpyxl>=3.1.5
+pywin32==311; sys_platform == 'win32'
+
+httpx>=0.28.0
+
+nvidia-ml-py>=12.535.133
+aiofiles>=24.1.0
+
+PyJWT>=2.12.0
+json-repair>=0.58.0
+SQLAlchemy>=2.0.45
+PyMySQL>=1.1.1
+psycopg[binary]>=3.2.3
+
+python-json-logger>=2.0.0
+prometheus-client>=0.20.0
+
+cryptography>=46.0.7
+ldap3>=2.9.1
+
+python-dotenv>=1.2.2
+setuptools>=77,<81
+paramiko>=3.4
