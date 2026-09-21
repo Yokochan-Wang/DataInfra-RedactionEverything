@@ -1,0 +1,463 @@
+{
+  "label": "before",
+  "generated_at": "2026-09-21T02:26:01.389733+00:00",
+  "branch_note": "perf/text-ner-acceleration BEFORE 基线（未改动 app/ 下生产代码）",
+  "backend": {
+    "base_url": "http://127.0.0.1:8002",
+    "api_prefix": "/api/v1",
+    "health": {
+      "status": "healthy",
+      "version": "0.1.0",
+      "timestamp": "2026-09-21T10:25:57.103713",
+      "license": {
+        "state": "unlicensed",
+        "expires_at": null,
+        "days_left": null
+      }
+    },
+    "services_health": {
+      "all_online": false,
+      "services": {
+        "paddle_ocr": {
+          "name": "PaddleOCR-VL-1.6-0.9B",
+          "status": "offline",
+          "detail": {
+            "reachable": false,
+            "model_state": "unreachable"
+          }
+        },
+        "has_ner": {
+          "name": "qwen3.8-27b",
+          "status": "online",
+          "detail": {
+            "runtime": "external OpenAI-compatible API",
+            "runtime_mode": "remote-gpu",
+            "gpu_available": true,
+            "gpu_enabled": true,
+            "gpu_only_mode": true,
+            "gpu_provider": "remote",
+            "device": "remote",
+            "cpu_fallback_risk": false,
+            "runtime_expectation": "remote-openai",
+            "model": "qwen3.8-27b",
+            "base_url": "http://4090-48g.zlattice.top:56666/v1",
+            "strict_probe": true,
+            "probe_url": "http://4090-48g.zlattice.top:56666/v1/models",
+            "reachable": true,
+            "model_state": "ready"
+          }
+        }
+      },
+      "probe_ms": 4056.8,
+      "checked_at": "2026-09-21T02:26:01.218902+00:00",
+      "gpu_memory": {
+        "used_mb": 7177,
+        "total_mb": 12288
+      },
+      "gpu_memory_all": [
+        {
+          "index": 0,
+          "used_mb": 7003,
+          "total_mb": 12288
+        }
+      ],
+      "disk": {
+        "total_gb": 1862.0,
+        "free_gb": 1580.6,
+        "used_ratio": 0.1511
+      },
+      "retention_days": 0,
+      "backup": {
+        "stores": {},
+        "stale": false,
+        "include_files": false
+      }
+    }
+  },
+  "auth": {
+    "username": "ner_eval_bench",
+    "authenticated": true
+  },
+  "log_path": "C:\\Work\\WSY\\DataInfra-RedactionEverything\\logs\\eval-before-backend.log",
+  "model_request_marker": "HaS model request finished",
+  "default_generic_types": [
+    "PERSON",
+    "ID_CARD",
+    "PASSPORT",
+    "PHONE",
+    "EMAIL",
+    "ADDRESS",
+    "BANK_CARD",
+    "INSTITUTION_NAME",
+    "DATE"
+  ],
+  "docs": [
+    {
+      "doc": "doc_a",
+      "file_id": "16baae11-a61d-4f50-9a45-5cba74ccdfe7",
+      "corpus_chars": 16090,
+      "corpus_entities": 47,
+      "wall_ms": 27311,
+      "remote_request_count": 23,
+      "remote_model_ms_list": [
+        4387,
+        746,
+        560,
+        584,
+        561,
+        585,
+        786,
+        633,
+        617,
+        1450,
+        2048,
+        1045,
+        606,
+        618,
+        3150,
+        2502,
+        1803,
+        1045,
+        586,
+        644,
+        676,
+        825,
+        453
+      ],
+      "remote_model_ms_total": 26910,
+      "log_cache_hits": 8,
+      "entity_count": 40,
+      "entity_multiset": {
+        "INSTITUTION_NAME": 10,
+        "DATE": 4,
+        "PERSON": 6,
+        "ID_CARD": 2,
+        "ADDRESS": 3,
+        "PHONE": 4,
+        "EMAIL": 4,
+        "BANK_CARD": 6,
+        "PASSPORT": 1
+      },
+      "parse_content_matches_corpus": true,
+      "closed_loop_duration_ms": 27283,
+      "preamble_gap_ms": 28,
+      "rounds_run": 3,
+      "termination_reason": "converged_no_new_candidates",
+      "rounds": [
+        {
+          "round_no": 1,
+          "input_chars": 16090,
+          "output_candidates": 38,
+          "total_candidates": 38,
+          "new_candidates": 38,
+          "conflicts": 0,
+          "duration_ms": 13097,
+          "next_round_pruning": {
+            "input_chars": 16090,
+            "residual_chars": 15580,
+            "masked_chars": 510,
+            "hard_pruned_chars": 0,
+            "soft_pruned_chars": 510,
+            "review_chars": 0,
+            "hard_pruned_ranges": 0,
+            "soft_pruned_ranges": 38,
+            "review_ranges": 0,
+            "input_blocks": 51,
+            "remaining_blocks": 51,
+            "reduction_ratio": 0.0317
+          }
+        },
+        {
+          "round_no": 2,
+          "input_chars": 16090,
+          "output_candidates": 2,
+          "total_candidates": 40,
+          "new_candidates": 2,
+          "conflicts": 0,
+          "duration_ms": 12794,
+          "next_round_pruning": {
+            "input_chars": 16090,
+            "residual_chars": 15542,
+            "masked_chars": 548,
+            "hard_pruned_chars": 0,
+            "soft_pruned_chars": 548,
+            "review_chars": 0,
+            "hard_pruned_ranges": 0,
+            "soft_pruned_ranges": 40,
+            "review_ranges": 0,
+            "input_blocks": 51,
+            "remaining_blocks": 51,
+            "reduction_ratio": 0.0341
+          }
+        },
+        {
+          "round_no": 3,
+          "input_chars": 16090,
+          "output_candidates": 0,
+          "total_candidates": 40,
+          "new_candidates": 0,
+          "conflicts": 0,
+          "duration_ms": 1391,
+          "next_round_pruning": {
+            "input_chars": 16090,
+            "residual_chars": 15542,
+            "masked_chars": 548,
+            "hard_pruned_chars": 0,
+            "soft_pruned_chars": 548,
+            "review_chars": 0,
+            "hard_pruned_ranges": 0,
+            "soft_pruned_ranges": 40,
+            "review_ranges": 0,
+            "input_blocks": 51,
+            "remaining_blocks": 51,
+            "reduction_ratio": 0.0341
+          }
+        }
+      ],
+      "warnings": [],
+      "recognition_failed": false,
+      "error": null,
+      "entities_file": "entities_doc_a.json"
+    },
+    {
+      "doc": "doc_b",
+      "file_id": "eb3b07a1-5e1f-4a43-9aeb-7dee631a311f",
+      "corpus_chars": 17487,
+      "corpus_entities": 40,
+      "wall_ms": 9552,
+      "remote_request_count": 7,
+      "remote_model_ms_list": [
+        3871,
+        811,
+        971,
+        1047,
+        527,
+        590,
+        1474
+      ],
+      "remote_model_ms_total": 9291,
+      "log_cache_hits": 27,
+      "entity_count": 33,
+      "entity_multiset": {
+        "INSTITUTION_NAME": 8,
+        "DATE": 4,
+        "PERSON": 5,
+        "ID_CARD": 2,
+        "ADDRESS": 3,
+        "PHONE": 3,
+        "EMAIL": 3,
+        "BANK_CARD": 4,
+        "PASSPORT": 1
+      },
+      "parse_content_matches_corpus": true,
+      "closed_loop_duration_ms": 9537,
+      "preamble_gap_ms": 15,
+      "rounds_run": 3,
+      "termination_reason": "converged_no_new_candidates",
+      "rounds": [
+        {
+          "round_no": 1,
+          "input_chars": 17487,
+          "output_candidates": 31,
+          "total_candidates": 31,
+          "new_candidates": 31,
+          "conflicts": 0,
+          "duration_ms": 5686,
+          "next_round_pruning": {
+            "input_chars": 17487,
+            "residual_chars": 17102,
+            "masked_chars": 385,
+            "hard_pruned_chars": 0,
+            "soft_pruned_chars": 385,
+            "review_chars": 0,
+            "hard_pruned_ranges": 0,
+            "soft_pruned_ranges": 31,
+            "review_ranges": 0,
+            "input_blocks": 55,
+            "remaining_blocks": 55,
+            "reduction_ratio": 0.022
+          }
+        },
+        {
+          "round_no": 2,
+          "input_chars": 17487,
+          "output_candidates": 2,
+          "total_candidates": 33,
+          "new_candidates": 2,
+          "conflicts": 0,
+          "duration_ms": 2366,
+          "next_round_pruning": {
+            "input_chars": 17487,
+            "residual_chars": 17064,
+            "masked_chars": 423,
+            "hard_pruned_chars": 0,
+            "soft_pruned_chars": 423,
+            "review_chars": 0,
+            "hard_pruned_ranges": 0,
+            "soft_pruned_ranges": 33,
+            "review_ranges": 0,
+            "input_blocks": 55,
+            "remaining_blocks": 55,
+            "reduction_ratio": 0.0242
+          }
+        },
+        {
+          "round_no": 3,
+          "input_chars": 17487,
+          "output_candidates": 0,
+          "total_candidates": 33,
+          "new_candidates": 0,
+          "conflicts": 0,
+          "duration_ms": 1484,
+          "next_round_pruning": {
+            "input_chars": 17487,
+            "residual_chars": 17064,
+            "masked_chars": 423,
+            "hard_pruned_chars": 0,
+            "soft_pruned_chars": 423,
+            "review_chars": 0,
+            "hard_pruned_ranges": 0,
+            "soft_pruned_ranges": 33,
+            "review_ranges": 0,
+            "input_blocks": 55,
+            "remaining_blocks": 55,
+            "reduction_ratio": 0.0242
+          }
+        }
+      ],
+      "warnings": [],
+      "recognition_failed": false,
+      "error": null,
+      "entities_file": "entities_doc_b.json"
+    },
+    {
+      "doc": "doc_c",
+      "file_id": "c119161d-f3c3-40f7-b13e-f6e4a4a1ec5f",
+      "corpus_chars": 19095,
+      "corpus_entities": 38,
+      "wall_ms": 16130,
+      "remote_request_count": 18,
+      "remote_model_ms_list": [
+        3881,
+        628,
+        607,
+        679,
+        583,
+        656,
+        1022,
+        901,
+        713,
+        609,
+        654,
+        646,
+        1071,
+        590,
+        561,
+        991,
+        705,
+        448
+      ],
+      "remote_model_ms_total": 15945,
+      "log_cache_hits": 18,
+      "entity_count": 33,
+      "entity_multiset": {
+        "INSTITUTION_NAME": 8,
+        "DATE": 4,
+        "PERSON": 5,
+        "ID_CARD": 2,
+        "ADDRESS": 3,
+        "PHONE": 3,
+        "EMAIL": 3,
+        "BANK_CARD": 4,
+        "PASSPORT": 1
+      },
+      "parse_content_matches_corpus": true,
+      "closed_loop_duration_ms": 16115,
+      "preamble_gap_ms": 15,
+      "rounds_run": 3,
+      "termination_reason": "converged_no_new_candidates",
+      "rounds": [
+        {
+          "round_no": 1,
+          "input_chars": 19095,
+          "output_candidates": 27,
+          "total_candidates": 27,
+          "new_candidates": 27,
+          "conflicts": 0,
+          "duration_ms": 11670,
+          "next_round_pruning": {
+            "input_chars": 19095,
+            "residual_chars": 18714,
+            "masked_chars": 381,
+            "hard_pruned_chars": 0,
+            "soft_pruned_chars": 381,
+            "review_chars": 0,
+            "hard_pruned_ranges": 0,
+            "soft_pruned_ranges": 27,
+            "review_ranges": 0,
+            "input_blocks": 60,
+            "remaining_blocks": 60,
+            "reduction_ratio": 0.02
+          }
+        },
+        {
+          "round_no": 2,
+          "input_chars": 19095,
+          "output_candidates": 6,
+          "total_candidates": 33,
+          "new_candidates": 6,
+          "conflicts": 0,
+          "duration_ms": 3261,
+          "next_round_pruning": {
+            "input_chars": 19095,
+            "residual_chars": 18653,
+            "masked_chars": 442,
+            "hard_pruned_chars": 0,
+            "soft_pruned_chars": 442,
+            "review_chars": 0,
+            "hard_pruned_ranges": 0,
+            "soft_pruned_ranges": 33,
+            "review_ranges": 0,
+            "input_blocks": 60,
+            "remaining_blocks": 60,
+            "reduction_ratio": 0.0231
+          }
+        },
+        {
+          "round_no": 3,
+          "input_chars": 19095,
+          "output_candidates": 0,
+          "total_candidates": 33,
+          "new_candidates": 0,
+          "conflicts": 0,
+          "duration_ms": 1183,
+          "next_round_pruning": {
+            "input_chars": 19095,
+            "residual_chars": 18653,
+            "masked_chars": 442,
+            "hard_pruned_chars": 0,
+            "soft_pruned_chars": 442,
+            "review_chars": 0,
+            "hard_pruned_ranges": 0,
+            "soft_pruned_ranges": 33,
+            "review_ranges": 0,
+            "input_blocks": 60,
+            "remaining_blocks": 60,
+            "reduction_ratio": 0.0231
+          }
+        }
+      ],
+      "warnings": [],
+      "recognition_failed": false,
+      "error": null,
+      "entities_file": "entities_doc_c.json"
+    }
+  ],
+  "summary": {
+    "docs": 3,
+    "wall_ms_total": 52993,
+    "remote_request_count_total": 48,
+    "entity_count_total": 106,
+    "preamble_gap_ms_total": 58
+  }
+}

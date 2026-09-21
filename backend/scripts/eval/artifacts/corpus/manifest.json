@@ -1,0 +1,975 @@
+{
+  "generated_at": "2026-09-20T10:58:14.648799+00:00",
+  "seed_base": 20260920,
+  "generator": "gen_ner_contract_corpus.py",
+  "default_generic_types": [
+    "PERSON",
+    "ID_CARD",
+    "PASSPORT",
+    "PHONE",
+    "EMAIL",
+    "ADDRESS",
+    "BANK_CARD",
+    "INSTITUTION_NAME",
+    "DATE"
+  ],
+  "offset_convention": "start/end 为 txt 文件 utf-8 解码后的 Python 字符下标；后端 content 与文件逐字一致",
+  "docs": [
+    {
+      "doc": "doc_a",
+      "file": "doc_a.txt",
+      "density": "dense",
+      "seed": 20260921,
+      "chars": 16090,
+      "bytes": 46279,
+      "entity_total": 47,
+      "entity_count_by_type": {
+        "INSTITUTION_NAME": 7,
+        "CASE_NUMBER": 1,
+        "DATE": 4,
+        "CREDIT_CODE": 2,
+        "PERSON": 6,
+        "ID_CARD": 2,
+        "ADDRESS": 3,
+        "PHONE": 4,
+        "EMAIL": 4,
+        "BANK_NAME": 3,
+        "BANK_ACCOUNT": 3,
+        "BANK_CARD": 3,
+        "PASSPORT": 1,
+        "AMOUNT": 4
+      },
+      "entities": [
+        {
+          "text": "上海市华信远智能科技有限公司",
+          "type": "INSTITUTION_NAME",
+          "start": 0,
+          "end": 14,
+          "in_default_schema": true
+        },
+        {
+          "text": "深圳市弘泰电子商务有限责任公司",
+          "type": "INSTITUTION_NAME",
+          "start": 15,
+          "end": 30,
+          "in_default_schema": true
+        },
+        {
+          "text": "HT-2025-4618-416",
+          "type": "CASE_NUMBER",
+          "start": 43,
+          "end": 59,
+          "in_default_schema": false
+        },
+        {
+          "text": "2025年1月18日",
+          "type": "DATE",
+          "start": 65,
+          "end": 75,
+          "in_default_schema": true
+        },
+        {
+          "text": "2025年11月25日",
+          "type": "DATE",
+          "start": 81,
+          "end": 92,
+          "in_default_schema": true
+        },
+        {
+          "text": "上海市华信远智能科技有限公司",
+          "type": "INSTITUTION_NAME",
+          "start": 145,
+          "end": 159,
+          "in_default_schema": true
+        },
+        {
+          "text": "9332HNJXGL41U3",
+          "type": "CREDIT_CODE",
+          "start": 169,
+          "end": 183,
+          "in_default_schema": false
+        },
+        {
+          "text": "汪涵",
+          "type": "PERSON",
+          "start": 190,
+          "end": 192,
+          "in_default_schema": true
+        },
+        {
+          "text": "610113197801093968",
+          "type": "ID_CARD",
+          "start": 198,
+          "end": 216,
+          "in_default_schema": true
+        },
+        {
+          "text": "西安市未央区长安路188号20层302室",
+          "type": "ADDRESS",
+          "start": 220,
+          "end": 240,
+          "in_default_schema": true
+        },
+        {
+          "text": "13585660330",
+          "type": "PHONE",
+          "start": 246,
+          "end": 257,
+          "in_default_schema": true
+        },
+        {
+          "text": "wanghan554@outlook.com",
+          "type": "EMAIL",
+          "start": 263,
+          "end": 285,
+          "in_default_schema": true
+        },
+        {
+          "text": "交通银行股份有限公司广州天河区支行",
+          "type": "BANK_NAME",
+          "start": 291,
+          "end": 308,
+          "in_default_schema": false
+        },
+        {
+          "text": "6043620256002783262",
+          "type": "BANK_ACCOUNT",
+          "start": 314,
+          "end": 333,
+          "in_default_schema": false
+        },
+        {
+          "text": "6217001528694642029",
+          "type": "BANK_CARD",
+          "start": 339,
+          "end": 358,
+          "in_default_schema": true
+        },
+        {
+          "text": "深圳市弘泰电子商务有限责任公司",
+          "type": "INSTITUTION_NAME",
+          "start": 363,
+          "end": 378,
+          "in_default_schema": true
+        },
+        {
+          "text": "9150RMJTL4B3PY",
+          "type": "CREDIT_CODE",
+          "start": 388,
+          "end": 402,
+          "in_default_schema": false
+        },
+        {
+          "text": "邓超",
+          "type": "PERSON",
+          "start": 409,
+          "end": 411,
+          "in_default_schema": true
+        },
+        {
+          "text": "420111197505157981",
+          "type": "ID_CARD",
+          "start": 417,
+          "end": 435,
+          "in_default_schema": true
+        },
+        {
+          "text": "杭州市西湖区文一路697号4层819室",
+          "type": "ADDRESS",
+          "start": 439,
+          "end": 458,
+          "in_default_schema": true
+        },
+        {
+          "text": "19872848431",
+          "type": "PHONE",
+          "start": 464,
+          "end": 475,
+          "in_default_schema": true
+        },
+        {
+          "text": "dengchao366@outlook.com",
+          "type": "EMAIL",
+          "start": 481,
+          "end": 504,
+          "in_default_schema": true
+        },
+        {
+          "text": "交通银行股份有限公司深圳福田区支行",
+          "type": "BANK_NAME",
+          "start": 510,
+          "end": 527,
+          "in_default_schema": false
+        },
+        {
+          "text": "6097519010288334706",
+          "type": "BANK_ACCOUNT",
+          "start": 533,
+          "end": 552,
+          "in_default_schema": false
+        },
+        {
+          "text": "6216614972030601730",
+          "type": "BANK_CARD",
+          "start": 558,
+          "end": 577,
+          "in_default_schema": true
+        },
+        {
+          "text": "潘军",
+          "type": "PERSON",
+          "start": 582,
+          "end": 584,
+          "in_default_schema": true
+        },
+        {
+          "text": "P74627656",
+          "type": "PASSPORT",
+          "start": 590,
+          "end": 599,
+          "in_default_schema": true
+        },
+        {
+          "text": "成都市武侯区春熙路415号13层903室",
+          "type": "ADDRESS",
+          "start": 603,
+          "end": 623,
+          "in_default_schema": true
+        },
+        {
+          "text": "19994169753",
+          "type": "PHONE",
+          "start": 629,
+          "end": 640,
+          "in_default_schema": true
+        },
+        {
+          "text": "panjun344@gmail.com",
+          "type": "EMAIL",
+          "start": 646,
+          "end": 665,
+          "in_default_schema": true
+        },
+        {
+          "text": "人民币伍佰伍拾伍万捌仟元整",
+          "type": "AMOUNT",
+          "start": 684,
+          "end": 697,
+          "in_default_schema": false
+        },
+        {
+          "text": "¥5,558,000",
+          "type": "AMOUNT",
+          "start": 698,
+          "end": 708,
+          "in_default_schema": false
+        },
+        {
+          "text": "人民币伍佰贰拾玖万元整",
+          "type": "AMOUNT",
+          "start": 747,
+          "end": 758,
+          "in_default_schema": false
+        },
+        {
+          "text": "¥5,290,000",
+          "type": "AMOUNT",
+          "start": 759,
+          "end": 769,
+          "in_default_schema": false
+        },
+        {
+          "text": "上海市华信远智能科技有限公司",
+          "type": "INSTITUTION_NAME",
+          "start": 15826,
+          "end": 15840,
+          "in_default_schema": true
+        },
+        {
+          "text": "唐磊",
+          "type": "PERSON",
+          "start": 15856,
+          "end": 15858,
+          "in_default_schema": true
+        },
+        {
+          "text": "2025年2月1日",
+          "type": "DATE",
+          "start": 15864,
+          "end": 15873,
+          "in_default_schema": true
+        },
+        {
+          "text": "深圳市弘泰电子商务有限责任公司",
+          "type": "INSTITUTION_NAME",
+          "start": 15882,
+          "end": 15897,
+          "in_default_schema": true
+        },
+        {
+          "text": "苏芮",
+          "type": "PERSON",
+          "start": 15913,
+          "end": 15915,
+          "in_default_schema": true
+        },
+        {
+          "text": "2025年1月28日",
+          "type": "DATE",
+          "start": 15921,
+          "end": 15931,
+          "in_default_schema": true
+        },
+        {
+          "text": "上海市华信远智能科技有限公司",
+          "type": "INSTITUTION_NAME",
+          "start": 15950,
+          "end": 15964,
+          "in_default_schema": true
+        },
+        {
+          "text": "交通银行股份有限公司北京海淀区支行",
+          "type": "BANK_NAME",
+          "start": 15970,
+          "end": 15987,
+          "in_default_schema": false
+        },
+        {
+          "text": "6024250204566599767",
+          "type": "BANK_ACCOUNT",
+          "start": 15993,
+          "end": 16012,
+          "in_default_schema": false
+        },
+        {
+          "text": "6214830439469161399",
+          "type": "BANK_CARD",
+          "start": 16018,
+          "end": 16037,
+          "in_default_schema": true
+        },
+        {
+          "text": "余伟",
+          "type": "PERSON",
+          "start": 16044,
+          "end": 16046,
+          "in_default_schema": true
+        },
+        {
+          "text": "13923751799",
+          "type": "PHONE",
+          "start": 16053,
+          "end": 16064,
+          "in_default_schema": true
+        },
+        {
+          "text": "yuwei775@gmail.com",
+          "type": "EMAIL",
+          "start": 16071,
+          "end": 16089,
+          "in_default_schema": true
+        }
+      ]
+    },
+    {
+      "doc": "doc_b",
+      "file": "doc_b.txt",
+      "density": "medium",
+      "seed": 20260922,
+      "chars": 17487,
+      "bytes": 50487,
+      "entity_total": 40,
+      "entity_count_by_type": {
+        "INSTITUTION_NAME": 6,
+        "CASE_NUMBER": 1,
+        "DATE": 4,
+        "CREDIT_CODE": 2,
+        "PERSON": 5,
+        "ID_CARD": 2,
+        "ADDRESS": 3,
+        "PHONE": 3,
+        "EMAIL": 3,
+        "BANK_NAME": 2,
+        "BANK_ACCOUNT": 2,
+        "BANK_CARD": 2,
+        "PASSPORT": 1,
+        "AMOUNT": 4
+      },
+      "entities": [
+        {
+          "text": "南京市金桥实业有限公司",
+          "type": "INSTITUTION_NAME",
+          "start": 0,
+          "end": 11,
+          "in_default_schema": true
+        },
+        {
+          "text": "西安市中衡实业有限公司",
+          "type": "INSTITUTION_NAME",
+          "start": 12,
+          "end": 23,
+          "in_default_schema": true
+        },
+        {
+          "text": "XY-2026-1775-613",
+          "type": "CASE_NUMBER",
+          "start": 36,
+          "end": 52,
+          "in_default_schema": false
+        },
+        {
+          "text": "2025年3月28日",
+          "type": "DATE",
+          "start": 58,
+          "end": 68,
+          "in_default_schema": true
+        },
+        {
+          "text": "2025年9月22日",
+          "type": "DATE",
+          "start": 74,
+          "end": 84,
+          "in_default_schema": true
+        },
+        {
+          "text": "南京市金桥实业有限公司",
+          "type": "INSTITUTION_NAME",
+          "start": 135,
+          "end": 146,
+          "in_default_schema": true
+        },
+        {
+          "text": "93319Y8Y93CLBW",
+          "type": "CREDIT_CODE",
+          "start": 156,
+          "end": 170,
+          "in_default_schema": false
+        },
+        {
+          "text": "韩雪",
+          "type": "PERSON",
+          "start": 177,
+          "end": 179,
+          "in_default_schema": true
+        },
+        {
+          "text": "110105196802144736",
+          "type": "ID_CARD",
+          "start": 185,
+          "end": 203,
+          "in_default_schema": true
+        },
+        {
+          "text": "上海市浦东新区淮海路287号21层106室",
+          "type": "ADDRESS",
+          "start": 207,
+          "end": 228,
+          "in_default_schema": true
+        },
+        {
+          "text": "13598022022",
+          "type": "PHONE",
+          "start": 234,
+          "end": 245,
+          "in_default_schema": true
+        },
+        {
+          "text": "hanxue298@gmail.com",
+          "type": "EMAIL",
+          "start": 251,
+          "end": 270,
+          "in_default_schema": true
+        },
+        {
+          "text": "中国工商银行股份有限公司上海静安区支行",
+          "type": "BANK_NAME",
+          "start": 276,
+          "end": 295,
+          "in_default_schema": false
+        },
+        {
+          "text": "6287551058541399502",
+          "type": "BANK_ACCOUNT",
+          "start": 301,
+          "end": 320,
+          "in_default_schema": false
+        },
+        {
+          "text": "6221558931528436098",
+          "type": "BANK_CARD",
+          "start": 326,
+          "end": 345,
+          "in_default_schema": true
+        },
+        {
+          "text": "西安市中衡实业有限公司",
+          "type": "INSTITUTION_NAME",
+          "start": 350,
+          "end": 361,
+          "in_default_schema": true
+        },
+        {
+          "text": "9161YFJGN1BJ3L",
+          "type": "CREDIT_CODE",
+          "start": 371,
+          "end": 385,
+          "in_default_schema": false
+        },
+        {
+          "text": "朱霞",
+          "type": "PERSON",
+          "start": 392,
+          "end": 394,
+          "in_default_schema": true
+        },
+        {
+          "text": "110105198811288247",
+          "type": "ID_CARD",
+          "start": 400,
+          "end": 418,
+          "in_default_schema": true
+        },
+        {
+          "text": "南京市秦淮区长江路37号25层718室",
+          "type": "ADDRESS",
+          "start": 422,
+          "end": 441,
+          "in_default_schema": true
+        },
+        {
+          "text": "13608204271",
+          "type": "PHONE",
+          "start": 447,
+          "end": 458,
+          "in_default_schema": true
+        },
+        {
+          "text": "zhuxia117@outlook.com",
+          "type": "EMAIL",
+          "start": 464,
+          "end": 485,
+          "in_default_schema": true
+        },
+        {
+          "text": "中信银行股份有限公司广州黄埔区支行",
+          "type": "BANK_NAME",
+          "start": 491,
+          "end": 508,
+          "in_default_schema": false
+        },
+        {
+          "text": "6021550687798763684",
+          "type": "BANK_ACCOUNT",
+          "start": 514,
+          "end": 533,
+          "in_default_schema": false
+        },
+        {
+          "text": "6216610570030218531",
+          "type": "BANK_CARD",
+          "start": 539,
+          "end": 558,
+          "in_default_schema": true
+        },
+        {
+          "text": "卢静",
+          "type": "PERSON",
+          "start": 563,
+          "end": 565,
+          "in_default_schema": true
+        },
+        {
+          "text": "G98064351",
+          "type": "PASSPORT",
+          "start": 571,
+          "end": 580,
+          "in_default_schema": true
+        },
+        {
+          "text": "成都市青羊区建设路954号5层317室",
+          "type": "ADDRESS",
+          "start": 584,
+          "end": 603,
+          "in_default_schema": true
+        },
+        {
+          "text": "15948487877",
+          "type": "PHONE",
+          "start": 609,
+          "end": 620,
+          "in_default_schema": true
+        },
+        {
+          "text": "lujing362@126.com",
+          "type": "EMAIL",
+          "start": 626,
+          "end": 643,
+          "in_default_schema": true
+        },
+        {
+          "text": "人民币伍佰叁拾伍万捌仟元整",
+          "type": "AMOUNT",
+          "start": 662,
+          "end": 675,
+          "in_default_schema": false
+        },
+        {
+          "text": "¥5,358,000",
+          "type": "AMOUNT",
+          "start": 676,
+          "end": 686,
+          "in_default_schema": false
+        },
+        {
+          "text": "人民币陆佰陆拾壹万元整",
+          "type": "AMOUNT",
+          "start": 725,
+          "end": 736,
+          "in_default_schema": false
+        },
+        {
+          "text": "¥6,610,000",
+          "type": "AMOUNT",
+          "start": 737,
+          "end": 747,
+          "in_default_schema": false
+        },
+        {
+          "text": "南京市金桥实业有限公司",
+          "type": "INSTITUTION_NAME",
+          "start": 17386,
+          "end": 17397,
+          "in_default_schema": true
+        },
+        {
+          "text": "周杰",
+          "type": "PERSON",
+          "start": 17413,
+          "end": 17415,
+          "in_default_schema": true
+        },
+        {
+          "text": "2026年3月12日",
+          "type": "DATE",
+          "start": 17421,
+          "end": 17431,
+          "in_default_schema": true
+        },
+        {
+          "text": "西安市中衡实业有限公司",
+          "type": "INSTITUTION_NAME",
+          "start": 17440,
+          "end": 17451,
+          "in_default_schema": true
+        },
+        {
+          "text": "贾明",
+          "type": "PERSON",
+          "start": 17467,
+          "end": 17469,
+          "in_default_schema": true
+        },
+        {
+          "text": "2026年12月12日",
+          "type": "DATE",
+          "start": 17475,
+          "end": 17486,
+          "in_default_schema": true
+        }
+      ]
+    },
+    {
+      "doc": "doc_c",
+      "file": "doc_c.txt",
+      "density": "sparse",
+      "seed": 20260923,
+      "chars": 19095,
+      "bytes": 55196,
+      "entity_total": 38,
+      "entity_count_by_type": {
+        "INSTITUTION_NAME": 6,
+        "CASE_NUMBER": 1,
+        "DATE": 4,
+        "CREDIT_CODE": 2,
+        "PERSON": 5,
+        "ID_CARD": 2,
+        "ADDRESS": 3,
+        "PHONE": 3,
+        "EMAIL": 3,
+        "BANK_NAME": 2,
+        "BANK_ACCOUNT": 2,
+        "BANK_CARD": 2,
+        "PASSPORT": 1,
+        "AMOUNT": 2
+      },
+      "entities": [
+        {
+          "text": "南京市智擎数据服务有限责任公司",
+          "type": "INSTITUTION_NAME",
+          "start": 0,
+          "end": 15,
+          "in_default_schema": true
+        },
+        {
+          "text": "上海市泉盛文化传媒股份有限公司",
+          "type": "INSTITUTION_NAME",
+          "start": 16,
+          "end": 31,
+          "in_default_schema": true
+        },
+        {
+          "text": "HT-2026-8417-497",
+          "type": "CASE_NUMBER",
+          "start": 44,
+          "end": 60,
+          "in_default_schema": false
+        },
+        {
+          "text": "2025年1月11日",
+          "type": "DATE",
+          "start": 66,
+          "end": 76,
+          "in_default_schema": true
+        },
+        {
+          "text": "2025年1月26日",
+          "type": "DATE",
+          "start": 82,
+          "end": 92,
+          "in_default_schema": true
+        },
+        {
+          "text": "南京市智擎数据服务有限责任公司",
+          "type": "INSTITUTION_NAME",
+          "start": 140,
+          "end": 155,
+          "in_default_schema": true
+        },
+        {
+          "text": "9311PY6HLLWCG7",
+          "type": "CREDIT_CODE",
+          "start": 165,
+          "end": 179,
+          "in_default_schema": false
+        },
+        {
+          "text": "姚远",
+          "type": "PERSON",
+          "start": 186,
+          "end": 188,
+          "in_default_schema": true
+        },
+        {
+          "text": "510107198307202413",
+          "type": "ID_CARD",
+          "start": 194,
+          "end": 212,
+          "in_default_schema": true
+        },
+        {
+          "text": "杭州市余杭区凤起路889号9层306室",
+          "type": "ADDRESS",
+          "start": 216,
+          "end": 235,
+          "in_default_schema": true
+        },
+        {
+          "text": "15987816339",
+          "type": "PHONE",
+          "start": 241,
+          "end": 252,
+          "in_default_schema": true
+        },
+        {
+          "text": "yaoyuan707@qq.com",
+          "type": "EMAIL",
+          "start": 258,
+          "end": 275,
+          "in_default_schema": true
+        },
+        {
+          "text": "中信银行股份有限公司上海徐汇区支行",
+          "type": "BANK_NAME",
+          "start": 281,
+          "end": 298,
+          "in_default_schema": false
+        },
+        {
+          "text": "6231887450948493097",
+          "type": "BANK_ACCOUNT",
+          "start": 304,
+          "end": 323,
+          "in_default_schema": false
+        },
+        {
+          "text": "6222024696188081807",
+          "type": "BANK_CARD",
+          "start": 329,
+          "end": 348,
+          "in_default_schema": true
+        },
+        {
+          "text": "上海市泉盛文化传媒股份有限公司",
+          "type": "INSTITUTION_NAME",
+          "start": 353,
+          "end": 368,
+          "in_default_schema": true
+        },
+        {
+          "text": "93441EEBC18W50",
+          "type": "CREDIT_CODE",
+          "start": 378,
+          "end": 392,
+          "in_default_schema": false
+        },
+        {
+          "text": "郭华",
+          "type": "PERSON",
+          "start": 399,
+          "end": 401,
+          "in_default_schema": true
+        },
+        {
+          "text": "320206198305077587",
+          "type": "ID_CARD",
+          "start": 407,
+          "end": 425,
+          "in_default_schema": true
+        },
+        {
+          "text": "深圳市宝安区科技园南路71号21层712室",
+          "type": "ADDRESS",
+          "start": 429,
+          "end": 450,
+          "in_default_schema": true
+        },
+        {
+          "text": "13622609905",
+          "type": "PHONE",
+          "start": 456,
+          "end": 467,
+          "in_default_schema": true
+        },
+        {
+          "text": "guohua951@outlook.com",
+          "type": "EMAIL",
+          "start": 473,
+          "end": 494,
+          "in_default_schema": true
+        },
+        {
+          "text": "中国民生银行股份有限公司杭州西湖区支行",
+          "type": "BANK_NAME",
+          "start": 500,
+          "end": 519,
+          "in_default_schema": false
+        },
+        {
+          "text": "6089195788432519837",
+          "type": "BANK_ACCOUNT",
+          "start": 525,
+          "end": 544,
+          "in_default_schema": false
+        },
+        {
+          "text": "6228482461163813209",
+          "type": "BANK_CARD",
+          "start": 550,
+          "end": 569,
+          "in_default_schema": true
+        },
+        {
+          "text": "余伟",
+          "type": "PERSON",
+          "start": 578,
+          "end": 580,
+          "in_default_schema": true
+        },
+        {
+          "text": "G66965131",
+          "type": "PASSPORT",
+          "start": 586,
+          "end": 595,
+          "in_default_schema": true
+        },
+        {
+          "text": "西安市雁塔区科技路551号11层601室",
+          "type": "ADDRESS",
+          "start": 599,
+          "end": 619,
+          "in_default_schema": true
+        },
+        {
+          "text": "18721341481",
+          "type": "PHONE",
+          "start": 625,
+          "end": 636,
+          "in_default_schema": true
+        },
+        {
+          "text": "yuwei589@qq.com",
+          "type": "EMAIL",
+          "start": 642,
+          "end": 657,
+          "in_default_schema": true
+        },
+        {
+          "text": "人民币柒佰捌拾万捌仟元整",
+          "type": "AMOUNT",
+          "start": 676,
+          "end": 688,
+          "in_default_schema": false
+        },
+        {
+          "text": "¥7,808,000",
+          "type": "AMOUNT",
+          "start": 689,
+          "end": 699,
+          "in_default_schema": false
+        },
+        {
+          "text": "南京市智擎数据服务有限责任公司",
+          "type": "INSTITUTION_NAME",
+          "start": 18988,
+          "end": 19003,
+          "in_default_schema": true
+        },
+        {
+          "text": "刘洋",
+          "type": "PERSON",
+          "start": 19019,
+          "end": 19021,
+          "in_default_schema": true
+        },
+        {
+          "text": "2025年5月5日",
+          "type": "DATE",
+          "start": 19027,
+          "end": 19036,
+          "in_default_schema": true
+        },
+        {
+          "text": "上海市泉盛文化传媒股份有限公司",
+          "type": "INSTITUTION_NAME",
+          "start": 19045,
+          "end": 19060,
+          "in_default_schema": true
+        },
+        {
+          "text": "陈静",
+          "type": "PERSON",
+          "start": 19076,
+          "end": 19078,
+          "in_default_schema": true
+        },
+        {
+          "text": "2026年6月20日",
+          "type": "DATE",
+          "start": 19084,
+          "end": 19094,
+          "in_default_schema": true
+        }
+      ]
+    }
+  ]
+}
