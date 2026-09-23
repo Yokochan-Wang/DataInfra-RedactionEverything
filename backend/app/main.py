@@ -710,6 +710,42 @@ async def _spa_fallback(full_path: str):
     return FileResponse(_FRONTEND_INDEX)
 
 
+# ---- Baseline: three-round closed-loop recognition (dated 20260902 overlay) ----
+# The dated modules stay versioned and are installed here so every launch path
+# (npm run dev, bare `uvicorn app.main:app`, deploy scripts) serves the closed
+# loop. CLOSED_LOOP_ENABLED=0 falls back to the legacy single-pass recognizer.
+from app.api import closed_loop_20260902 as _closed_loop_api  # noqa: E402
+from app.services.closed_loop_runtime_20260902 import (  # noqa: E402
+    install_closed_loop_runtime_20260902 as _install_closed_loop_runtime,
+)
+from app.services.recognition_duration_ui_20260902 import (  # noqa: E402
+    install_recognition_duration_ui_overlay_20260902 as _install_recognition_duration_ui,
+)
+
+_install_closed_loop_runtime()
+app.include_router(
+    _closed_loop_api.router,
+    prefix=settings.API_PREFIX,
+    tags=["三轮闭环识别"],
+    dependencies=[Depends(require_auth)],
+)
+# The SPA catch-all is registered last; move the dated API routes in front of it.
+_fallback_index = next(
+    (
+        index
+        for index, route in enumerate(app.router.routes)
+        if getattr(route, "path", None) == "/{full_path:path}"
+    ),
+    len(app.router.routes),
+)
+_dated_routes = app.router.routes[_fallback_index + 1 :]
+if _dated_routes:
+    del app.router.routes[_fallback_index + 1 :]
+    for _route in reversed(_dated_routes):
+        app.router.routes.insert(_fallback_index, _route)
+_install_recognition_duration_ui(app)
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(

@@ -23,16 +23,19 @@ def _entity(entity_type: str, text: str, start: int, *, source: str = "has", con
     )
 
 
-def test_three_round_loop_masks_previous_spans_and_recovers_residual_value():
+def test_three_round_loop_places_pruned_spans_and_recovers_residual_value():
     text = "姓名：张三；联系电话：13800000000；地址：上海市浦东新区"
     calls: list[str] = []
 
     async def detector(current_text, _types):
         calls.append(current_text)
         if len(calls) == 1:
-            return [_entity("PERSON", "张三", text.index("张三"), source="has")]
+            return [_entity("PERSON", "张三", current_text.index("张三"), source="has")]
         if len(calls) == 2:
-            return [_entity("PHONE", "13800000000", text.index("13800000000"), source="regex")]
+            # Detectors always report offsets relative to the input they were
+            # handed; the closed loop maps them back to the original document.
+            start = current_text.index("13800000000")
+            return [_entity("PHONE", "13800000000", start, source="regex")]
         return []
 
     entities, audit = asyncio.run(
@@ -47,10 +50,14 @@ def test_three_round_loop_masks_previous_spans_and_recovers_residual_value():
     assert {entity.text for entity in entities} == {"张三", "13800000000"}
     assert len(calls) == 3
     assert "张三" not in calls[1]
+    assert "<PROTECTED_ENTITY_1>" in calls[1]
     assert "13800000000" in calls[1]
     assert audit["rounds_run"] == 3
     assert audit["termination_reason"] == "converged_no_new_candidates"
     assert audit["pruning_summary"]["masked_chars"] >= len("张三")
+    first_input = audit["rounds"][0]["next_round_input"]
+    assert first_input["placeholder_ranges"] == 1
+    assert first_input["residual_chars"] == len(text) - len("张三")
 
 
 def test_hard_pruning_requires_deterministic_evidence_and_soft_keeps_audit():

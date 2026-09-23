@@ -8,8 +8,11 @@ module when the dated application entrypoint is used.
 The implementation is conservative by design:
 
 * round 1 always runs on the original text;
-* later rounds mask only accepted spans with same-length whitespace, so all
-  remaining offsets still map to the original document;
+* later rounds are built from the residual input: hard-pruned regions leave
+  the input, soft-pruned regions become a PROTECTED_ENTITY placeholder and
+  unresolved regions are re-sent verbatim; a per-round offset map translates
+  detector spans back to the original document, so coordinates always stay
+  aligned;
 * low-confidence and boundary-sensitive spans are soft-pruned and remain in
   the audit trail; identity spans are never hard-pruned unless deterministic
   evidence is available;
@@ -53,6 +56,8 @@ _IDENTITY_TYPES = frozenset(
 )
 _EDGE_PUNCTUATION = " \t\r\n，。；：、,.!?！？;:()（）[]【】<>"
 _MASK_CHAR = " "
+_PLACEHOLDER_TEMPLATE = "<PROTECTED_ENTITY_{index}>"
+_SEGMENT_SEPARATOR = "\n"
 
 
 def _env_bool(name: str, default: bool) -> bool:
@@ -78,17 +83,35 @@ def _env_float(name: str, default: float, minimum: float, maximum: float) -> flo
     return max(minimum, min(maximum, value))
 
 
+def _runtime_adaptive_max_rounds() -> int:
+    """Default round count for the active text-detection runtime.
+
+    The ``external`` runtime proxies every round to a remote detector, so the
+    extra rounds cost real network latency per document while only a tiny
+    fraction of golden-corpus entities first appear in round >= 2.  Local
+    runtimes keep the full three rounds.
+    """
+    from app.core.config import is_remote_text_runtime
+
+    if is_remote_text_runtime():
+        return 1
+    return 3
+
+
 @dataclass(frozen=True)
 class ClosedLoopConfig:
     """Runtime knobs for the three-round loop."""
 
     enabled: bool = True
     max_rounds: int = 3
+    max_rounds_source: str = "default"
     hard_prune_confidence: float = 0.95
     soft_prune_confidence: float = 0.75
     context_chars: int = 32
     min_new_candidates_to_continue: int = 1
     identity_final_check: bool = True
+    hard_prune_min_evidence_kinds: int = 2
+    skip_identical_input: bool = True
     block_chars: int = 320
 
     @classmethod
@@ -102,12 +125,26 @@ class ClosedLoopConfig:
             return os.environ.get(env_name, default)
 
         enabled = pick("enabled", "CLOSED_LOOP_ENABLED", _env_bool("CLOSED_LOOP_ENABLED", True))
-        max_rounds = pick("max_rounds", "CLOSED_LOOP_MAX_ROUNDS", 3)
+        if "max_rounds" in nested:
+            max_rounds = nested["max_rounds"]
+            max_rounds_source = "mapping"
+        else:
+            env_max_rounds = os.environ.get("CLOSED_LOOP_MAX_ROUNDS")
+            if env_max_rounds is None:
+                max_rounds = _runtime_adaptive_max_rounds()
+                max_rounds_source = "runtime_adaptive"
+            else:
+                max_rounds = env_max_rounds
+                max_rounds_source = "env"
         hard = pick("hard_prune_confidence", "CLOSED_LOOP_HARD_PRUNE_CONFIDENCE", 0.95)
         soft = pick("soft_prune_confidence", "CLOSED_LOOP_SOFT_PRUNE_CONFIDENCE", 0.75)
         context = pick("context_chars", "CLOSED_LOOP_CONTEXT_CHARS", 32)
         min_new = pick("min_new_candidates_to_continue", "CLOSED_LOOP_MIN_NEW_CANDIDATES", 1)
         identity_check = pick("identity_final_check", "CLOSED_LOOP_IDENTITY_FINAL_CHECK", True)
+        evidence_kinds = pick(
+            "hard_prune_min_evidence_kinds", "CLOSED_LOOP_HARD_PRUNE_MIN_EVIDENCE_KINDS", 2
+        )
+        skip_identical = pick("skip_identical_input", "CLOSED_LOOP_SKIP_IDENTICAL_INPUT", True)
         block_chars = pick("block_chars", "CLOSED_LOOP_BLOCK_CHARS", 320)
 
         def as_bool(value: Any, default: bool) -> bool:
@@ -136,11 +173,14 @@ class ClosedLoopConfig:
         return cls(
             enabled=as_bool(enabled, True),
             max_rounds=as_int(max_rounds, 3, 1, 3),
+            max_rounds_source=max_rounds_source,
             hard_prune_confidence=hard_value,
             soft_prune_confidence=soft_value,
             context_chars=as_int(context, 32, 0, 512),
             min_new_candidates_to_continue=as_int(min_new, 1, 0, 1000),
             identity_final_check=as_bool(identity_check, True),
+            hard_prune_min_evidence_kinds=as_int(evidence_kinds, 2, 1, 4),
+            skip_identical_input=as_bool(skip_identical, True),
             block_chars=as_int(block_chars, 320, 64, 4096),
         )
 
@@ -148,11 +188,14 @@ class ClosedLoopConfig:
         return {
             "enabled": self.enabled,
             "max_rounds": self.max_rounds,
+            "max_rounds_source": self.max_rounds_source,
             "hard_prune_confidence": self.hard_prune_confidence,
             "soft_prune_confidence": self.soft_prune_confidence,
             "context_chars": self.context_chars,
             "min_new_candidates_to_continue": self.min_new_candidates_to_continue,
             "identity_final_check": self.identity_final_check,
+            "hard_prune_min_evidence_kinds": self.hard_prune_min_evidence_kinds,
+            "skip_identical_input": self.skip_identical_input,
             "block_chars": self.block_chars,
         }
 
@@ -371,10 +414,20 @@ def _classify_pruning(record: CandidateRecord, text: str, config: ClosedLoopConf
     if _identity_type(record.normalized_type) and config.identity_final_check:
         if record.effective_confidence < config.hard_prune_confidence:
             return "soft", "identity 类未达到硬剪枝置信度，强制终检"
+    # FR-03 hard pruning needs a confidence above the configured threshold
+    # and consistent evidence.  Evidence from at least two evidence kinds
+    # (NER + rule, OCR + NER, text + vision, ...) or a deterministic rule hit
+    # is what confirms the candidate, so it lifts the effective confidence to
+    # the hard-pruning threshold.  Repeated observations from a single source
+    # are still counted once and cannot masquerade as confirmation.
+    evidence_kinds = len({source for source in record.sources if source})
     deterministic = "regex" in record.sources or "manual" in record.sources
-    if record.effective_confidence >= config.hard_prune_confidence and deterministic:
-        return "hard", "高置信度且存在确定性证据"
-    if record.effective_confidence >= config.soft_prune_confidence:
+    confidence = record.effective_confidence
+    if deterministic or evidence_kinds >= config.hard_prune_min_evidence_kinds:
+        confidence = max(confidence, config.hard_prune_confidence)
+    if confidence >= config.hard_prune_confidence:
+        return "hard", "证据一致且达到硬剪枝阈值"
+    if confidence >= config.soft_prune_confidence:
         return "soft", "中高置信度候选，保留占位和上下文"
     return "review", "低置信度候选，进入重点复检"
 
@@ -429,6 +482,177 @@ def build_pruning_plan(
 
 def _range_intersects(entity: Entity, ranges: Iterable[tuple[int, int]]) -> bool:
     return any(int(entity.start) < end and int(entity.end) > start for start, end in ranges)
+
+
+def _span_intersects(span: tuple[int, int], ranges: Iterable[tuple[int, int]]) -> bool:
+    start, end = span
+    return any(start < other_end and end > other_start for other_start, other_end in ranges)
+
+
+def _complement_ranges(length: int, ranges: Iterable[tuple[int, int]]) -> tuple[tuple[int, int], ...]:
+    """Return the parts of the text that are not covered by ranges."""
+    merged = _merge_ranges(ranges)
+    residual: list[tuple[int, int]] = []
+    cursor = 0
+    for start, end in merged:
+        if start > cursor:
+            residual.append((cursor, start))
+        cursor = max(cursor, end)
+    if cursor < length:
+        residual.append((cursor, length))
+    return tuple(residual)
+
+
+@dataclass(frozen=True)
+class ResidualInput:
+    """Next-round input together with the map back to the original text."""
+
+    text: str
+    offsets: tuple[int, ...]
+    protected_ranges: tuple[tuple[int, int], ...]
+    placeholder_ranges: tuple[tuple[int, int], ...]
+    reopened_ranges: tuple[tuple[int, int], ...]
+    residual_chars: int
+    original_chars: int
+    block_chars: int = 320
+
+    @property
+    def sent_chars(self) -> int:
+        return len(self.text)
+
+    def as_dict(self) -> dict[str, Any]:
+        sent_blocks = 0
+        if self.sent_chars:
+            sent_blocks = max(1, (self.sent_chars + self.block_chars - 1) // self.block_chars)
+        return {
+            "original_chars": self.original_chars,
+            "sent_chars": self.sent_chars,
+            "residual_chars": self.residual_chars,
+            "sent_blocks": sent_blocks,
+            "placeholder_ranges": len(self.placeholder_ranges),
+            "reopened_ranges": len(self.reopened_ranges),
+            "trim_ratio": round(1 - self.sent_chars / self.original_chars, 4)
+            if self.original_chars
+            else 0.0,
+        }
+
+
+def build_residual_input(
+    text: str,
+    plan: PruningPlan,
+    config: ClosedLoopConfig | None = None,
+    reopened: Iterable[tuple[int, int]] = (),
+) -> ResidualInput:
+    """Build the next round input from a pruning plan (FR-03 / FR-04).
+
+    Hard-pruned regions leave the input, soft-pruned regions keep a
+    PROTECTED_ENTITY placeholder plus their original coordinates, and
+    unresolved regions are re-sent verbatim.  The next round therefore sees a
+    smaller payload made of new content instead of a whole-document whitespace
+    mask that repeats the previous request.
+    """
+    cfg = config or ClosedLoopConfig()
+    original = str(text or "")
+    length = len(original)
+    reopened_ranges = _merge_ranges(reopened)
+    hard_ranges = _merge_ranges(
+        span for span in plan.hard_ranges if not _span_intersects(span, reopened_ranges)
+    )
+    soft_ranges = _merge_ranges(plan.soft_ranges)
+    protected = _merge_ranges((*hard_ranges, *soft_ranges))
+
+    pieces: list[tuple[int, int, str]] = [
+        (start, end, "keep") for start, end in _complement_ranges(length, protected)
+    ]
+    pieces.extend((start, end, "placeholder") for start, end in soft_ranges)
+    pieces.sort(key=lambda item: (item[0], item[1]))
+
+    buffer: list[str] = []
+    offsets: list[int] = []
+    placeholder_ranges: list[tuple[int, int]] = []
+    residual_chars = 0
+    previous_end: int | None = None
+    placeholder_index = 0
+    for start, end, kind in pieces:
+        if start >= end:
+            continue
+        if buffer and previous_end is not None and start > previous_end:
+            # Removed (hard-pruned) regions are gone; keep the segments apart
+            # so the detector cannot merge text across the gap.
+            buffer.append(_SEGMENT_SEPARATOR)
+            offsets.append(previous_end)
+        if kind == "keep":
+            buffer.append(original[start:end])
+            offsets.extend(range(start, end))
+            residual_chars += end - start
+        else:
+            placeholder_index += 1
+            token = _PLACEHOLDER_TEMPLATE.format(index=placeholder_index)
+            buffer.append(token)
+            offsets.extend([start] * len(token))
+            placeholder_ranges.append((start, end))
+        previous_end = end
+
+    return ResidualInput(
+        text="".join(buffer),
+        offsets=tuple(offsets),
+        protected_ranges=protected,
+        placeholder_ranges=tuple(placeholder_ranges),
+        reopened_ranges=reopened_ranges,
+        residual_chars=residual_chars,
+        original_chars=length,
+        block_chars=cfg.block_chars,
+    )
+
+
+def _relocate_entities(
+    entities: Iterable[Any],
+    offsets: tuple[int, ...],
+    original_text: str,
+) -> list[Entity]:
+    """Map detector spans from the round input back to the original text."""
+    limit = len(offsets)
+    relocated: list[Entity] = []
+    for raw in entities:
+        if isinstance(raw, Entity):
+            candidate = raw.model_copy(deep=True)
+        elif isinstance(raw, dict):
+            try:
+                candidate = Entity.model_validate(raw)
+            except Exception:
+                continue
+        else:
+            continue
+        start, end = int(candidate.start or 0), int(candidate.end or 0)
+        if start < 0 or end <= start or end > limit:
+            continue
+        mapped_start = int(offsets[start])
+        mapped_end = int(offsets[end - 1]) + 1
+        if not 0 <= mapped_start < mapped_end <= len(original_text):
+            continue
+        candidate.start = mapped_start
+        candidate.end = mapped_end
+        candidate.text = original_text[mapped_start:mapped_end]
+        relocated.append(candidate)
+    return relocated
+
+
+def _reopened_ranges(
+    entities: Iterable[Entity],
+    plan: PruningPlan | None,
+) -> tuple[tuple[int, int], ...]:
+    """FR-03 rollback: fresh evidence next to a protected region un-prunes it."""
+    if plan is None or not plan.hard_ranges:
+        return ()
+    reopened: list[tuple[int, int]] = []
+    for entity in entities:
+        widened = (max(0, int(entity.start) - 1), int(entity.end) + 1)
+        for start, end in plan.hard_ranges:
+            if _span_intersects(widened, ((start, end),)):
+                reopened.append((start, end))
+    return _merge_ranges(reopened)
+
+
 
 
 def _pick_stronger(left: CandidateRecord, right: CandidateRecord) -> CandidateRecord:
@@ -590,6 +814,7 @@ async def run_closed_loop_text(
         normalized = [candidate for candidate in (_valid_entity(item, original_text) for item in entities) if candidate]
         return normalized, {
             "enabled": False,
+            "max_rounds_source": cfg.max_rounds_source,
             "rounds_run": 1,
             "termination_reason": "disabled",
             "rounds": [{"round_no": 1, "input_chars": len(original_text), "new_candidates": len(normalized)}],
@@ -602,8 +827,12 @@ async def run_closed_loop_text(
     records: list[CandidateRecord] = []
     round_summaries: list[dict[str, Any]] = []
     current_text = original_text
+    offsets: tuple[int, ...] = tuple(range(len(original_text)))
     masked_ranges: tuple[tuple[int, int], ...] = ()
+    reopened: tuple[tuple[int, int], ...] = ()
+    current_plan: PruningPlan | None = None
     last_plan: PruningPlan | None = None
+    last_residual: ResidualInput | None = None
     termination_reason = "max_rounds"
 
     for round_no in range(1, cfg.max_rounds + 1):
@@ -614,22 +843,29 @@ async def run_closed_loop_text(
             logger.exception("closed-loop detector failed at round %d", round_no)
             raw_entities = []
 
+        raw_list = [item for item in raw_entities if item is not None]
+        incoming = _relocate_entities(raw_list, offsets, original_text)
         before_count = len(records)
         new_count, conflict_count = _merge_candidates(
             records,
-            raw_entities,
+            incoming,
             round_no,
             original_text,
             masked_ranges=masked_ranges,
         )
+        # FR-03 rollback: fresh evidence at the edge of a hard-pruned region
+        # lifts that region's pruning so it is sent to the detector again.
+        reopened = _merge_ranges((*reopened, *_reopened_ranges(incoming, current_plan)))
         # Recompute decisions as soon as new evidence arrives, so the next
         # pruning plan can promote a stable candidate from soft to hard.
         if round_no < cfg.max_rounds:
             last_plan = build_pruning_plan(original_text, records, cfg)
+            last_residual = build_residual_input(original_text, last_plan, cfg, reopened=reopened)
         summary: dict[str, Any] = {
             "round_no": round_no,
             "input_chars": len(current_text),
-            "output_candidates": len([item for item in raw_entities if item is not None]),
+            "output_candidates": len(raw_list),
+            "mapped_candidates": len(incoming),
             "total_candidates": len(records),
             "new_candidates": max(0, len(records) - before_count),
             "conflicts": conflict_count,
@@ -637,6 +873,8 @@ async def run_closed_loop_text(
         }
         if last_plan is not None:
             summary["next_round_pruning"] = last_plan.as_dict()
+        if last_residual is not None:
+            summary["next_round_input"] = last_residual.as_dict()
         round_summaries.append(summary)
 
         if round_no >= cfg.max_rounds:
@@ -649,12 +887,19 @@ async def run_closed_loop_text(
         if new_count < cfg.min_new_candidates_to_continue and round_no > 1:
             termination_reason = "converged_no_new_candidates"
             break
-        if last_plan is None or not last_plan.masked_text.strip():
+        if last_residual is None or last_residual.residual_chars <= 0:
             termination_reason = "converged_no_residual_text"
             break
+        if cfg.skip_identical_input and last_residual.text == current_text:
+            # Nothing was pruned, so the next round would repeat the very same
+            # payload (FR-05 early stop).
+            termination_reason = "converged_identical_input"
+            break
 
-        current_text = last_plan.masked_text
-        masked_ranges = _merge_ranges(last_plan.all_ranges)
+        current_plan = last_plan
+        current_text = last_residual.text
+        offsets = last_residual.offsets
+        masked_ranges = last_residual.protected_ranges
 
     if last_plan is None:
         last_plan = build_pruning_plan(original_text, records, cfg)
@@ -664,11 +909,13 @@ async def run_closed_loop_text(
     audit = {
         "enabled": True,
         "config": cfg.as_dict(),
+        "max_rounds_source": cfg.max_rounds_source,
         "rounds_run": len(round_summaries),
         "termination_reason": termination_reason,
         "rounds": round_summaries,
         "pruning_summary": {
             **last_plan.as_dict(),
+            "reopened_ranges": len(reopened),
             "candidate_counts": dict(pruning_counts),
             "conflict_candidates": conflict_count,
         },
@@ -794,8 +1041,10 @@ __all__ = [
     "CandidateRecord",
     "ClosedLoopConfig",
     "PruningPlan",
+    "ResidualInput",
     "assign_pages_to_entities_20260902",
     "build_pruning_plan",
+    "build_residual_input",
     "run_closed_loop_default_ner_20260902",
     "run_closed_loop_for_file_20260902",
     "run_closed_loop_text",

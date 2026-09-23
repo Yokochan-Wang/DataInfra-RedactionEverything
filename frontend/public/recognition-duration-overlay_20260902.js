@@ -164,6 +164,30 @@
     });
   }
 
+  function formatRoundSeconds(milliseconds) {
+    var seconds = finiteNumber(milliseconds) / 1000;
+    if (seconds <= 0) return '';
+    return seconds >= 10 ? seconds.toFixed(1) : seconds.toFixed(2);
+  }
+
+  function roundDetail(audit) {
+    var items = audit && audit.rounds;
+    if (!items || !items.length) return '';
+    var durations = [];
+    var sizes = [];
+    for (var index = 0; index < items.length; index += 1) {
+      var item = items[index] || {};
+      var seconds = formatRoundSeconds(item.duration_ms);
+      if (seconds) durations.push(seconds);
+      var chars = finiteNumber(item.input_chars);
+      if (chars > 0) sizes.push(String(Math.round(chars)));
+    }
+    var parts = [];
+    if (durations.length) parts.push('每轮 ' + durations.join('/') + ' s');
+    if (sizes.length) parts.push('送检 ' + sizes.join('→') + ' 字');
+    return parts.join('，');
+  }
+
   function renderText(audit, fallbackMilliseconds) {
     var duration = finiteNumber(audit && audit.duration_ms) || finiteNumber(fallbackMilliseconds);
     if (!duration) return;
@@ -173,6 +197,8 @@
       message += ' · 单次识别';
     } else if (rounds > 0) {
       message += ' · ' + Math.round(rounds) + ' 轮闭环';
+      var detail = roundDetail(audit);
+      if (detail) message += '（' + detail + '）';
     }
     show(message);
   }
