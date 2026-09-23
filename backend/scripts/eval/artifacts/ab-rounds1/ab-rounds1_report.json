@@ -1,0 +1,249 @@
+{
+  "label": "ab-rounds1",
+  "generated_at": "2026-09-21T02:42:01.568469+00:00",
+  "branch_note": "perf/text-ner-acceleration BEFORE 基线（未改动 app/ 下生产代码）",
+  "backend": {
+    "base_url": "http://127.0.0.1:8002",
+    "api_prefix": "/api/v1",
+    "health": {
+      "status": "healthy",
+      "version": "0.1.0",
+      "timestamp": "2026-09-21T10:41:57.296901",
+      "license": {
+        "state": "unlicensed",
+        "expires_at": null,
+        "days_left": null
+      }
+    },
+    "services_health": {
+      "all_online": false,
+      "services": {
+        "paddle_ocr": {
+          "name": "PaddleOCR-VL-1.6-0.9B",
+          "status": "offline",
+          "detail": {
+            "reachable": false,
+            "model_state": "unreachable"
+          }
+        },
+        "has_ner": {
+          "name": "qwen3.8-27b",
+          "status": "online",
+          "detail": {
+            "runtime": "external OpenAI-compatible API",
+            "runtime_mode": "remote-gpu",
+            "gpu_available": true,
+            "gpu_enabled": true,
+            "gpu_only_mode": true,
+            "gpu_provider": "remote",
+            "device": "remote",
+            "cpu_fallback_risk": false,
+            "runtime_expectation": "remote-openai",
+            "model": "qwen3.8-27b",
+            "base_url": "http://4090-48g.zlattice.top:56666/v1",
+            "strict_probe": true,
+            "probe_url": "http://4090-48g.zlattice.top:56666/v1/models",
+            "reachable": true,
+            "model_state": "ready"
+          }
+        }
+      },
+      "probe_ms": 4050.9,
+      "checked_at": "2026-09-21T02:42:01.407006+00:00",
+      "gpu_memory": {
+        "used_mb": 7199,
+        "total_mb": 12288
+      },
+      "gpu_memory_all": [
+        {
+          "index": 0,
+          "used_mb": 7025,
+          "total_mb": 12288
+        }
+      ],
+      "disk": {
+        "total_gb": 1862.0,
+        "free_gb": 1580.6,
+        "used_ratio": 0.1512
+      },
+      "retention_days": 0,
+      "backup": {
+        "stores": {},
+        "stale": false,
+        "include_files": false
+      }
+    }
+  },
+  "auth": {
+    "username": "ner_eval_bench",
+    "authenticated": true
+  },
+  "log_path": "C:\\Work\\WSY\\DataInfra-RedactionEverything\\logs\\eval-before-backend.log",
+  "model_request_marker": "HaS model request finished",
+  "default_generic_types": [
+    "PERSON",
+    "ID_CARD",
+    "PASSPORT",
+    "PHONE",
+    "EMAIL",
+    "ADDRESS",
+    "BANK_CARD",
+    "INSTITUTION_NAME",
+    "DATE"
+  ],
+  "docs": [
+    {
+      "doc": "doc_a",
+      "file_id": "d50c6528-6ea6-4a1f-84f1-76e58e340d09",
+      "corpus_chars": 16090,
+      "corpus_entities": 47,
+      "wall_ms": 80,
+      "remote_request_count": 0,
+      "remote_model_ms_list": [],
+      "remote_model_ms_total": 0,
+      "log_cache_hits": 11,
+      "entity_count": 38,
+      "entity_multiset": {
+        "INSTITUTION_NAME": 10,
+        "DATE": 4,
+        "PERSON": 6,
+        "ID_CARD": 2,
+        "ADDRESS": 3,
+        "PHONE": 4,
+        "EMAIL": 4,
+        "BANK_CARD": 4,
+        "PASSPORT": 1
+      },
+      "parse_content_matches_corpus": true,
+      "closed_loop_duration_ms": 51,
+      "preamble_gap_ms": 29,
+      "rounds_run": 1,
+      "termination_reason": "max_rounds",
+      "rounds": [
+        {
+          "round_no": 1,
+          "input_chars": 16090,
+          "output_candidates": 38,
+          "total_candidates": 38,
+          "new_candidates": 38,
+          "conflicts": 0,
+          "duration_ms": 49
+        }
+      ],
+      "warnings": [],
+      "recognition_failed": false,
+      "error": null,
+      "entities_file": "entities_doc_a.json"
+    },
+    {
+      "doc": "doc_b",
+      "file_id": "47affec6-8a34-4c2d-9ea5-059f4ed4620f",
+      "corpus_chars": 17487,
+      "corpus_entities": 40,
+      "wall_ms": 5858,
+      "remote_request_count": 3,
+      "remote_model_ms_list": [
+        4134,
+        725,
+        955
+      ],
+      "remote_model_ms_total": 5814,
+      "log_cache_hits": 9,
+      "entity_count": 31,
+      "entity_multiset": {
+        "INSTITUTION_NAME": 8,
+        "DATE": 4,
+        "PERSON": 5,
+        "ID_CARD": 2,
+        "ADDRESS": 3,
+        "PHONE": 3,
+        "EMAIL": 3,
+        "BANK_CARD": 2,
+        "PASSPORT": 1
+      },
+      "parse_content_matches_corpus": true,
+      "closed_loop_duration_ms": 5829,
+      "preamble_gap_ms": 29,
+      "rounds_run": 1,
+      "termination_reason": "max_rounds",
+      "rounds": [
+        {
+          "round_no": 1,
+          "input_chars": 17487,
+          "output_candidates": 31,
+          "total_candidates": 31,
+          "new_candidates": 31,
+          "conflicts": 0,
+          "duration_ms": 5828
+        }
+      ],
+      "warnings": [],
+      "recognition_failed": false,
+      "error": null,
+      "entities_file": "entities_doc_b.json"
+    },
+    {
+      "doc": "doc_c",
+      "file_id": "6885ea64-4bdb-431c-80c7-3be491a37000",
+      "corpus_chars": 19095,
+      "corpus_entities": 38,
+      "wall_ms": 11375,
+      "remote_request_count": 12,
+      "remote_model_ms_list": [
+        4463,
+        656,
+        582,
+        644,
+        568,
+        646,
+        591,
+        631,
+        674,
+        598,
+        616,
+        634
+      ],
+      "remote_model_ms_total": 11303,
+      "log_cache_hits": 0,
+      "entity_count": 27,
+      "entity_multiset": {
+        "INSTITUTION_NAME": 8,
+        "DATE": 2,
+        "PERSON": 3,
+        "ID_CARD": 2,
+        "ADDRESS": 3,
+        "PHONE": 3,
+        "EMAIL": 3,
+        "BANK_CARD": 2,
+        "PASSPORT": 1
+      },
+      "parse_content_matches_corpus": true,
+      "closed_loop_duration_ms": 11345,
+      "preamble_gap_ms": 30,
+      "rounds_run": 1,
+      "termination_reason": "max_rounds",
+      "rounds": [
+        {
+          "round_no": 1,
+          "input_chars": 19095,
+          "output_candidates": 27,
+          "total_candidates": 27,
+          "new_candidates": 27,
+          "conflicts": 0,
+          "duration_ms": 11344
+        }
+      ],
+      "warnings": [],
+      "recognition_failed": false,
+      "error": null,
+      "entities_file": "entities_doc_c.json"
+    }
+  ],
+  "summary": {
+    "docs": 3,
+    "wall_ms_total": 17313,
+    "remote_request_count_total": 15,
+    "entity_count_total": 96,
+    "preamble_gap_ms_total": 88
+  }
+}
