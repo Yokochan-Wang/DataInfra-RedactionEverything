@@ -1177,16 +1177,39 @@ const enOverrides: Record<string, string> = {
   'settings.pipelineDescription.image':
     'Use GLM-4.6V fixed visual element presets to detect faces, seals, documents, QR codes, receipts, signatures, paper, and related visual regions.',
   'settings.textModel.infoDesc':
-    'Configure the text recognition endpoint used by the product. Save to apply immediately, or test first with the current address.',
+    'Text recognition has two tabs — local model and remote model — each storing its own configuration. "Save and activate" switches the running model immediately, with no restart and no .env edit.',
   'settings.textModel.tag.openai': 'OpenAI-compatible',
   'settings.textModel.tag.local': 'Local HTTP',
   'settings.textModel.tag.server': 'llama-server',
   'settings.textModel.tag.builtin': 'Built-in',
   'settings.textModel.cardDescription':
     'The app currently uses one text NER endpoint. Point it to an OpenAI-compatible address, then test and save from this page.',
+  'settings.textModel.tab.local': 'Local model',
+  'settings.textModel.tab.remote': 'Remote model',
+  'settings.textModel.localCardDescription':
+    'An OpenAI-compatible service on this machine or the LAN (llama-server / vLLM). Switching to a local small model only needs a new address and model name here.',
+  'settings.textModel.remoteCardDescription':
+    'A remote OpenAI-compatible service (GPU host or cloud API). Fill in the API key when it needs authentication.',
   'settings.textModel.endpointLabel': 'OpenAI-compatible API root',
   'settings.textModel.endpointHint':
     'Testing tries the current address directly. You do not need to save first.',
+  'settings.textModel.modelNameLabel': 'Model name',
+  'settings.textModel.modelNameHint':
+    'Requests use this name after saving; the "Local services" panel shows it too unless you override it.',
+  'settings.textModel.modelNamePlaceholder': 'e.g. HaS_Text_0209_0.6B_Q4',
+  'settings.textModel.displayNameLabel': 'Local service display name (optional)',
+  'settings.textModel.displayNameHint': 'Falls back to the model name when empty.',
+  'settings.textModel.displayNamePlaceholder': 'e.g. Local small model',
+  'settings.textModel.apiKeyLabel': 'API key',
+  'settings.textModel.apiKeyHint':
+    'A stored key is shown as __REDACTED__: saving it unchanged keeps the stored key, clearing it removes the key.',
+  'settings.textModel.apiKeyPlaceholder': 'sk-...',
+  'settings.textModel.saveApply': 'Save and activate',
+  'settings.textModel.saveApplied': 'Saved and activated: {model}',
+  'settings.textModel.savedHint': 'Currently active: {tab} · {model}',
+  'settings.textModel.activeBadge': 'Active: ',
+  'settings.textModel.notActiveBadge': 'Not active',
+  'settings.textModel.unnamedModel': 'Unnamed model',
   'settings.textModel.reset': 'Reset to environment default',
   'settings.textModel.saveSuccess': 'Configuration saved and applied.',
   'settings.textModel.responseNotJson':

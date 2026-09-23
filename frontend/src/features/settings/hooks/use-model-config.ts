@@ -16,21 +16,76 @@ function normalizeServiceLive(
   return status === 'online' || status === 'offline' ? status : undefined;
 }
 
-export function normalizeNerBackendUrl(value: unknown): string {
-  if (!value || typeof value !== 'object') return DEFAULT_NER_BACKEND_URL;
-  const rawUrl = (value as { llamacpp_base_url?: unknown }).llamacpp_base_url;
-  return typeof rawUrl === 'string' && rawUrl.trim() ? rawUrl : DEFAULT_NER_BACKEND_URL;
+export type TextModelTab = 'local' | 'remote';
+
+/** 一份文本模型连接配置。本地与远端字段一致，远端通常需要 API Key。 */
+export interface TextModelProfileForm {
+  base_url: string;
+  model_name: string;
+  display_name: string;
+  api_key: string;
+}
+
+export interface TextModelRuntimeState {
+  active: TextModelTab;
+  local: TextModelProfileForm;
+  remote: TextModelProfileForm;
+}
+
+function emptyProfile(baseUrl = ''): TextModelProfileForm {
+  return { base_url: baseUrl, model_name: '', display_name: '', api_key: '' };
+}
+
+function emptyRuntimeState(): TextModelRuntimeState {
+  return {
+    active: 'local',
+    local: emptyProfile(DEFAULT_NER_BACKEND_URL),
+    remote: emptyProfile(),
+  };
+}
+
+function readString(source: Record<string, unknown>, key: string): string {
+  const value = source[key];
+  return typeof value === 'string' ? value : '';
+}
+
+function normalizeProfile(raw: unknown, fallbackUrl: string): TextModelProfileForm {
+  if (!raw || typeof raw !== 'object') return emptyProfile(fallbackUrl);
+  const source = raw as Record<string, unknown>;
+  return {
+    base_url: readString(source, 'base_url').trim() || fallbackUrl,
+    model_name: readString(source, 'model_name'),
+    display_name: readString(source, 'display_name'),
+    api_key: readString(source, 'api_key'),
+  };
+}
+
+function normalizeRuntimeState(value: unknown): TextModelRuntimeState {
+  const data = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+  const legacyUrl = readString(data, 'llamacpp_base_url').trim();
+  return {
+    active: data.active === 'remote' ? 'remote' : 'local',
+    local: normalizeProfile(data.local, legacyUrl || DEFAULT_NER_BACKEND_URL),
+    remote: normalizeProfile(data.remote, ''),
+  };
+}
+
+/** 主页 / 侧栏展示名：显式显示名优先，其次模型名。 */
+export function profileDisplayName(profile: TextModelProfileForm): string {
+  return (profile.display_name || profile.model_name || '').trim();
 }
 
 export function useNerBackend() {
-  const [llamacppBaseUrl, setLlamacppBaseUrl] = useState(DEFAULT_NER_BACKEND_URL);
+  const [tab, setTab] = useState<TextModelTab>('local');
+  const [form, setForm] = useState<TextModelRuntimeState>(emptyRuntimeState);
+  const [saved, setSaved] = useState<TextModelRuntimeState>(emptyRuntimeState);
   const [nerLoading, setNerLoading] = useState(true);
   const [nerSaving, setNerSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [nerLive, setNerLive] = useState<'online' | 'offline' | undefined>(undefined);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const { health } = useServiceHealth();
+  const { health, refresh } = useServiceHealth();
 
   const fetchNerBackend = useCallback(async () => {
     try {
@@ -38,8 +93,10 @@ export function useNerBackend() {
       setLoadError(null);
       const res = await fetchWithTimeout('/api/v1/ner-backend', { timeoutMs: 25000 });
       if (!res.ok) throw new Error('fetch failed');
-      const data = await res.json().catch(() => ({}));
-      setLlamacppBaseUrl(normalizeNerBackendUrl(data));
+      const state = normalizeRuntimeState(await res.json().catch(() => ({})));
+      setSaved(state);
+      setForm(state);
+      setTab(state.active);
     } catch (e) {
       if (import.meta.env.DEV) console.error('fetch NER config failed', e);
       setLoadError(t('settings.loadFailed'));
@@ -57,12 +114,19 @@ export function useNerBackend() {
     setNerLive(normalizeServiceLive(status));
   }, [health]);
 
+  const activeProfile = form[tab];
+
+  const updateActiveProfile = useCallback(
+    (patch: Partial<TextModelProfileForm>) => {
+      setForm((current) => ({ ...current, [tab]: { ...current[tab], ...patch } }));
+    },
+    [tab],
+  );
+
+  // 保存与测试都提交两份配置，只用 active 指向当前页签：另一份不会被清空。
   const payload = useCallback(
-    () => ({
-      backend: 'llamacpp' as const,
-      llamacpp_base_url: llamacppBaseUrl,
-    }),
-    [llamacppBaseUrl],
+    () => ({ active: tab, local: form.local, remote: form.remote }),
+    [tab, form],
   );
 
   const saveNerBackend = useCallback(async () => {
@@ -79,14 +143,25 @@ export function useNerBackend() {
         showToast((d as { detail?: string }).detail || t('settings.saveFailed'), 'error');
         return;
       }
-      setTestResult({ success: true, message: t('settings.textModel.saveSuccess') });
+      const state = normalizeRuntimeState(await res.json().catch(() => ({})));
+      setSaved(state);
+      setForm(state);
+      // 主页 / 侧栏的“本地服务”名称读的是健康接口，保存后刷新一次即可看到新名字。
+      refresh();
+      setTestResult({
+        success: true,
+        message: t('settings.textModel.saveApplied').replace(
+          '{model}',
+          profileDisplayName(state[state.active]) || t('settings.textModel.unnamedModel'),
+        ),
+      });
     } catch (e) {
       if (import.meta.env.DEV) console.error(e);
       showToast(t('settings.saveFailed'), 'error');
     } finally {
       setNerSaving(false);
     }
-  }, [payload]);
+  }, [payload, refresh]);
 
   const testConnection = useCallback(async () => {
     setTesting(true);
@@ -152,8 +227,13 @@ export function useNerBackend() {
   }, [fetchNerBackend]);
 
   return {
-    llamacppBaseUrl,
-    setLlamacppBaseUrl,
+    tab,
+    setTab,
+    activeTab: saved.active,
+    activeProfile,
+    form,
+    saved,
+    updateActiveProfile,
     nerLoading,
     nerSaving,
     testing,

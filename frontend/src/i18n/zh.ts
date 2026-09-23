@@ -1061,15 +1061,38 @@ const zhOverrides: Record<string, string> = {
   'settings.pipelineDescription.image':
     '使用 GLM-4.6V 固定视觉类识别人脸、印章、证件、二维码、票据等视觉敏感区域。',
   'settings.textModel.infoDesc':
-    '在这里配置产品使用的文本识别接口。保存后立即生效，也可以先用当前地址做连通性测试。',
+    '文本识别接口分「本地模型」「远程模型」两个页签，各自保存一份配置；按“保存并启用”后立即切换到该模型，无需重启也无需改 .env。',
   'settings.textModel.tag.openai': 'OpenAI 兼容',
   'settings.textModel.tag.local': '本地 HTTP',
   'settings.textModel.tag.server': 'llama-server',
   'settings.textModel.tag.builtin': '内置',
   'settings.textModel.cardDescription':
     '当前产品只使用一个文本 NER 接口。填入兼容地址后，可以直接在这里测试并保存。',
+  'settings.textModel.tab.local': '本地模型',
+  'settings.textModel.tab.remote': '远程模型',
+  'settings.textModel.localCardDescription':
+    '本机或局域网内的 OpenAI 兼容服务（llama-server / vLLM）。换成本地小模型只改这里的地址和模型名称。',
+  'settings.textModel.remoteCardDescription':
+    '远端 OpenAI 兼容服务（GPU 服务器 / 云 API）。需要鉴权时填写 API Key。',
   'settings.textModel.endpointLabel': 'OpenAI 兼容 API 根地址',
   'settings.textModel.endpointHint': '测试会直接使用当前输入的地址，不需要先保存。',
+  'settings.textModel.modelNameLabel': '模型名称',
+  'settings.textModel.modelNameHint':
+    '保存后按这个名字请求模型；“本地服务”显示的名称默认也用它。',
+  'settings.textModel.modelNamePlaceholder': '例如：HaS_Text_0209_0.6B_Q4',
+  'settings.textModel.displayNameLabel': '本地服务显示名称（可选）',
+  'settings.textModel.displayNameHint': '留空则使用模型名称。',
+  'settings.textModel.displayNamePlaceholder': '例如：本地小模型',
+  'settings.textModel.apiKeyLabel': 'API Key',
+  'settings.textModel.apiKeyHint':
+    '已保存的 Key 显示为 __REDACTED__：原样保存表示不修改，清空表示删除。',
+  'settings.textModel.apiKeyPlaceholder': 'sk-...',
+  'settings.textModel.saveApply': '保存并启用',
+  'settings.textModel.saveApplied': '已保存并启用：{model}',
+  'settings.textModel.savedHint': '当前生效：{tab} · {model}',
+  'settings.textModel.activeBadge': '当前生效：',
+  'settings.textModel.notActiveBadge': '未启用',
+  'settings.textModel.unnamedModel': '未命名模型',
   'settings.textModel.reset': '恢复为环境默认值',
   'settings.textModel.saveSuccess': '配置已保存并生效。',
   'settings.textModel.responseNotJson': 'HTTP {status}：响应不是 JSON，请确认后端已经启动。',

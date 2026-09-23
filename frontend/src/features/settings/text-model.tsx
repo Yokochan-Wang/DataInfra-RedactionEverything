@@ -5,18 +5,26 @@ import { useT } from '@/i18n';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { InteractionLockOverlay } from '@/components/InteractionLockOverlay';
-import { useNerBackend } from './hooks/use-model-config';
-import { ModelEndpointCard } from './components/model-endpoint-card';
+import { cn } from '@/lib/utils';
+import { tonePanelClass } from '@/utils/toneClasses';
+import { profileDisplayName, useNerBackend, type TextModelTab } from './hooks/use-model-config';
+import { TextModelProfileCard } from './components/text-model-profile-card';
 
 export function TextModel() {
   const t = useT();
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
   const [resetting, setResetting] = useState(false);
   const {
-    llamacppBaseUrl,
-    setLlamacppBaseUrl,
+    tab,
+    setTab,
+    activeTab,
+    activeProfile,
+    form,
+    saved,
+    updateActiveProfile,
     nerLoading,
     nerSaving,
     testing,
@@ -36,6 +44,10 @@ export function TextModel() {
       </div>
     );
   }
+
+  const tabLabel = (value: TextModelTab) =>
+    value === 'remote' ? t('settings.textModel.tab.remote') : t('settings.textModel.tab.local');
+  const activeName = profileDisplayName(activeProfile);
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-background">
@@ -65,15 +77,21 @@ export function TextModel() {
             </div>
             <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
               <div className="flex flex-wrap justify-end gap-1.5">
-                <Badge variant="outline" className="whitespace-nowrap">
-                  {t('settings.textModel.tag.openai')}
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    'whitespace-nowrap',
+                    activeTab === 'local' && tonePanelClass.success,
+                  )}
+                >
+                  {t('settings.textModel.activeBadge')}
+                  {tabLabel(activeTab)}
                 </Badge>
-                <Badge variant="outline" className="whitespace-nowrap">
-                  {t('settings.textModel.tag.local')}
-                </Badge>
-                <Badge variant="outline" className="whitespace-nowrap">
-                  {t('settings.textModel.tag.server')}
-                </Badge>
+                {activeName && (
+                  <Badge variant="secondary" className="whitespace-nowrap font-mono">
+                    {activeName}
+                  </Badge>
+                )}
               </div>
               <Button
                 variant="outline"
@@ -87,22 +105,72 @@ export function TextModel() {
             </div>
           </section>
 
-          <ModelEndpointCard
-            title={t('nav.textModel')}
-            description={t('settings.textModel.cardDescription')}
-            endpointUrl={llamacppBaseUrl}
-            onEndpointChange={setLlamacppBaseUrl}
-            onTest={() => void testConnection()}
-            onSave={() => void saveNerBackend()}
-            testing={testing}
-            saving={nerSaving}
-            testResult={testResult}
-            liveStatus={nerLive}
-            placeholder="http://127.0.0.1:8080/v1"
-            tags={[t('settings.textModel.tag.openai'), t('settings.textModel.tag.builtin')]}
-            endpointLabel={t('settings.textModel.endpointLabel')}
-            endpointHint={t('settings.textModel.endpointHint')}
-          />
+          <Tabs
+            value={tab}
+            onValueChange={(value) => setTab(value === 'remote' ? 'remote' : 'local')}
+            className="gap-3"
+          >
+            <TabsList className="rounded-xl border border-border/70 bg-muted/40 p-1">
+              <TabsTrigger value="local" data-testid="text-model-tab-local">
+                {t('settings.textModel.tab.local')}
+              </TabsTrigger>
+              <TabsTrigger value="remote" data-testid="text-model-tab-remote">
+                {t('settings.textModel.tab.remote')}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="local" className="mt-0">
+              <TextModelProfileCard
+                title={t('settings.textModel.tab.local')}
+                description={t('settings.textModel.localCardDescription')}
+                profile={form.local}
+                onChange={updateActiveProfile}
+                onTest={() => void testConnection()}
+                onSave={() => void saveNerBackend()}
+                testing={testing}
+                saving={nerSaving}
+                isActive={activeTab === 'local'}
+                liveStatus={nerLive}
+                endpointPlaceholder="http://127.0.0.1:8080/v1"
+              />
+            </TabsContent>
+
+            <TabsContent value="remote" className="mt-0">
+              <TextModelProfileCard
+                title={t('settings.textModel.tab.remote')}
+                description={t('settings.textModel.remoteCardDescription')}
+                profile={form.remote}
+                onChange={updateActiveProfile}
+                onTest={() => void testConnection()}
+                onSave={() => void saveNerBackend()}
+                testing={testing}
+                saving={nerSaving}
+                isActive={activeTab === 'remote'}
+                liveStatus={nerLive}
+                showApiKey
+                endpointPlaceholder="http://gpu-host:8000/v1"
+              />
+            </TabsContent>
+          </Tabs>
+
+          {testResult && (
+            <div
+              className={cn(
+                'shrink-0 rounded-lg border px-3 py-2 text-xs leading-5',
+                testResult.success ? tonePanelClass.success : tonePanelClass.danger,
+              )}
+              data-testid="text-model-test-result"
+            >
+              {testResult.success ? '\u2713 ' : '\u2717 '}
+              {testResult.message}
+            </div>
+          )}
+
+          <p className="shrink-0 text-xs leading-5 text-muted-foreground">
+            {t('settings.textModel.savedHint')
+              .replace('{tab}', tabLabel(saved.active))
+              .replace('{model}', profileDisplayName(saved[saved.active]) || t('settings.textModel.unnamedModel'))}
+          </p>
         </div>
       </div>
       <ConfirmDialog
