@@ -55,6 +55,10 @@ class _NameType:
 
 
 def test_distinct_payloads_respect_gate(monkeypatch):
+    # 本测试验证全局闸门的串行语义；root .env 的 HAS_TEXT_RUNTIME=external
+    # 会命中 2026-09-21 的 external 旁路（无本地 GPU 争用），因此显式钉住
+    # 本地 runtime。external 旁路行为由 test_gpu_inference_gate_runtime_20260902 覆盖。
+    monkeypatch.setattr(settings, "HAS_TEXT_RUNTIME", "llamacpp")
     monkeypatch.setattr(settings, "SERIALIZE_SHARED_GPU_MODELS", True)
     monkeypatch.setattr(settings, "HAS_NER_GLOBAL_MAX_INFLIGHT", 2, raising=False)
     client = _CountingHaSClient()

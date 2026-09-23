@@ -37,6 +37,14 @@ async def shared_gpu_inference_slot(label: str) -> AsyncIterator[None]:
         yield
         return
 
+    from app.core.config import is_remote_text_runtime
+
+    if is_remote_text_runtime() and bool(
+        getattr(settings, "HAS_NER_EXTERNAL_GATE_BYPASS", True)
+    ):
+        yield
+        return
+
     sem = _gate_semaphore()
     started = time.perf_counter()
     async with sem:

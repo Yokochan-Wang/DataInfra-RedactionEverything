@@ -239,6 +239,16 @@ class HybridNERService:
         validated_entities = self._cross_validate(all_entities, text, enabled_type_ids)
         logger.info("  Kept %d entities after validation", len(validated_entities))
 
+        # Stage 4: 确定性正则兜底（identity 类漏检保险，union 语义不覆盖已识别跨度）
+        from app.services.identity_regex_floor_20260921 import (
+            apply_identity_regex_floor,
+            retype_labeled_bank_accounts,
+        )
+
+        validated_entities = apply_identity_regex_floor(text, entity_types, validated_entities)
+        # Stage 5: 账户标签修正（"账户6222…"是账号不是卡号；格式相同，只能按标签裁决）
+        validated_entities = retype_labeled_bank_accounts(validated_entities, text, entity_types)
+
         # Prometheus: NER 延迟 + 实体数
         from app.core.metrics import NER_DURATION, NER_ENTITY_COUNT
         NER_DURATION.labels(backend="hybrid").observe(_time.perf_counter() - _t0)

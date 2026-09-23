@@ -161,7 +161,7 @@ class HaSClient:
         temperature 未传时用确定性默认 _MODEL_TEMPERATURE(=0.0)；自洽多趟采样时
         调用方按趟传入(第0趟贪心0.0，后续 temp>0)。
         """
-        from app.core.config import settings
+        from app.core.config import get_has_text_model_name, is_remote_text_runtime
         base = self._effective_base_url()
         payload: dict[str, Any] = {
             "messages": messages,
@@ -171,9 +171,10 @@ class HaSClient:
         }
         if max_tokens is not None:
             payload["max_tokens"] = max(_MIN_CALL_MAX_TOKENS, int(max_tokens))
-        if settings.HAS_TEXT_MODEL_NAME:
-            payload["model"] = settings.HAS_TEXT_MODEL_NAME
-        if settings.HAS_TEXT_RUNTIME.strip().lower() == "external":
+        model_name = get_has_text_model_name()
+        if model_name:
+            payload["model"] = model_name
+        if is_remote_text_runtime():
             payload["reasoning_effort"] = "none"
         started = time.perf_counter()
         response = retry_sync(

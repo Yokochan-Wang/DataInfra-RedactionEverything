@@ -387,6 +387,9 @@ class Settings(BaseSettings):
     # 1 = 历史串行行为（单卡小显存部署安全默认）；vLLM 多实例部署可放开
     # （双卡 5090 生产 = 6：双实例 × 每实例 ~3，受 KV cache 预算约束）。
     HAS_NER_GLOBAL_MAX_INFLIGHT: int = 1
+    # 只影响 external runtime（远端 OpenAI 兼容服务，无本地 GPU 争用）：
+    # runtime=external 时全局推理闸门自动旁路，kill-switch 置 False 可恢复串行。
+    HAS_NER_EXTERNAL_GATE_BYPASS: bool = True
     # 自洽多趟 NER 采样（R4 leak-safe 并集）。K = 主 payload 的采样趟数。
     # K=1 = 现状：单趟 temp=0 贪心种子，与历史逐字等价。并集只增不减 => 恒 ⊇
     # 种子 = 现状超集；temp>0 趟采出的幻觉值交下游 matcher 网住（不匹配 OCR 块
@@ -801,9 +804,44 @@ def get_settings() -> Settings:
 settings = get_settings()
 
 
+# .env 里表示“文本 NER 走远端服务”的取值；运行时配置用 "remote" 表达同一件事。
+_REMOTE_TEXT_RUNTIMES = frozenset({"external", "remote"})
+
+
+def _runtime_text_profile():
+    """当前生效的文本模型配置（设置页保存过才有，否则 None）。"""
+    from app.core.ner_runtime import load_ner_runtime
+
+    rt = load_ner_runtime()
+    return rt.profile() if rt is not None else None
+
+
+def get_effective_text_runtime() -> str:
+    """当前生效的文本 NER 运行时："remote"（远端服务）或 "local"。
+
+    远端服务不占本地显存，并发闸门与轮次策略都按这个判定分流。
+    """
+    from app.core.ner_runtime import load_ner_runtime
+
+    rt = load_ner_runtime()
+    if rt is not None:
+        return "remote" if rt.active == "remote" else "local"
+    env_runtime = get_settings().HAS_TEXT_RUNTIME.strip().lower()
+    return "remote" if env_runtime in _REMOTE_TEXT_RUNTIMES else "local"
+
+
+def is_remote_text_runtime() -> bool:
+    """文本 NER 是否指向远端 OpenAI 兼容服务。"""
+    return get_effective_text_runtime() == "remote"
+
+
 def get_has_chat_base_url() -> str:
     """Return the OpenAI-compatible base URL used by HaS Text."""
     s = get_settings()
+    # 设置页保存的运行时配置优先级最高：用户在这里随时切换本地/远端模型。
+    profile = _runtime_text_profile()
+    if profile is not None and profile.base_url.strip():
+        return _resolve_wsl_localhost_url(profile.base_url.strip())
     if s.HAS_TEXT_RUNTIME.strip().lower() == "external":
         external_url = s.HAS_TEXT_EXTERNAL_BASE_URL or s.HAS_BASE_URL
         if external_url:
@@ -814,14 +852,28 @@ def get_has_chat_base_url() -> str:
         return _resolve_wsl_localhost_url(s.HAS_BASE_URL)
     if s.HAS_LLAMACPP_BASE_URL:
         return _resolve_wsl_localhost_url(s.HAS_LLAMACPP_BASE_URL)
-    from app.core.ner_runtime import load_ner_runtime
-    rt = load_ner_runtime()
-    if rt is not None:
-        return _resolve_wsl_localhost_url(rt.llamacpp_base_url)
     return _resolve_wsl_localhost_url("http://127.0.0.1:8080/v1")
 
 
+def get_has_text_model_name() -> str:
+    """发给 OpenAI 兼容服务的 model 字段。
+
+    运行时配置存在时不再回落到 .env：本地服务上发一个远端模型名会直接 404。
+    """
+    profile = _runtime_text_profile()
+    if profile is not None:
+        return profile.model_name.strip()
+    return get_settings().HAS_TEXT_MODEL_NAME.strip()
+
+
 def get_has_text_headers() -> dict[str, str]:
+    profile = _runtime_text_profile()
+    if profile is not None:
+        api_key = profile.api_key.strip()
+        if api_key:
+            return {"Authorization": f"Bearer {api_key}"}
+        # 运行时不带 key：本地服务无需鉴权，绝不能把 .env 里远端服务的 key 发到本机。
+        return {}
     api_key = get_settings().HAS_TEXT_API_KEY.strip()
     if not api_key:
         return {}
@@ -833,9 +885,20 @@ def get_has_health_check_url() -> str:
     return f"{get_has_chat_base_url()}/models"
 
 
+def configured_text_display_name() -> str | None:
+    """设置页显式选定的模型显示名；没有运行时配置时为 None。"""
+    profile = _runtime_text_profile()
+    if profile is None:
+        return None
+    return profile.effective_name() or None
+
+
 def get_has_display_name() -> str:
     """Return the display name used by /health/services."""
     import os
+    configured = configured_text_display_name()
+    if configured:
+        return configured
     custom = (os.environ.get("HAS_NER_DISPLAY_NAME") or "").strip()
     if custom:
         return custom

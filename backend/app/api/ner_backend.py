@@ -1,6 +1,8 @@
 """
-文本 NER 后端（HaS / llama-server）运行时配置 API
-持久化至 data/ner_backend.json，优先级高于环境变量。
+文本 NER 后端（本地 / 远端模型）运行时配置 API
+
+设置页把本地、远端两份配置写进 data/ner_backend.json，active 决定推理链路
+实际用哪一份。优先级高于 .env，保存即生效，无需重启也无需改 .env。
 """
 from __future__ import annotations
 
@@ -12,10 +14,21 @@ from fastapi import APIRouter, HTTPException
 
 from app.core.config import get_settings
 from app.core.llamacpp_probe import probe_llamacpp
-from app.core.ner_runtime import NerBackendRuntime, load_ner_runtime, save_ner_runtime
+from app.core.ner_runtime import (
+    DEFAULT_LOCAL_BASE_URL,
+    REDACTED_API_KEY,
+    NerRuntimeState,
+    TextModelProfile,
+    delete_ner_runtime,
+    load_ner_runtime,
+    load_ner_runtime_for_ui,
+    save_ner_runtime,
+)
 
 router = APIRouter(prefix="/ner-backend", tags=["文本NER后端"])
 logger = logging.getLogger(__name__)
+
+_REMOTE_ENV_RUNTIMES = frozenset({"external", "remote"})
 
 
 def _validate_base_url(base_url: str) -> None:
@@ -61,64 +74,135 @@ def _with_hint(msg: str, hint: str | None) -> str:
     return f"{msg} {hint}" if hint else msg
 
 
-def _saved_vs_form_hint(body: NerBackendRuntime) -> str | None:
+def _mask_profile(profile: TextModelProfile) -> TextModelProfile:
+    """读接口不回传明文 Key，只回传哨兵值；写接口收到哨兵值即保留服务端原值。"""
+    if not profile.api_key.strip():
+        return profile
+    return profile.model_copy(update={"api_key": REDACTED_API_KEY})
+
+
+def _mask_state(state: NerRuntimeState) -> NerRuntimeState:
+    return state.model_copy(
+        update={"local": _mask_profile(state.local), "remote": _mask_profile(state.remote)}
+    )
+
+
+def _merge_profile(incoming: TextModelProfile, stored: TextModelProfile) -> TextModelProfile:
+    api_key = stored.api_key if incoming.api_key == REDACTED_API_KEY else incoming.api_key
+    return TextModelProfile(
+        base_url=incoming.base_url.strip() or stored.base_url.strip(),
+        api_key=api_key,
+        model_name=incoming.model_name.strip(),
+        display_name=incoming.display_name.strip(),
+    )
+
+
+def _merge_state(body: NerRuntimeState, stored: NerRuntimeState) -> NerRuntimeState:
+    return NerRuntimeState(
+        active=body.active,
+        local=_merge_profile(body.local, stored.local),
+        remote=_merge_profile(body.remote, stored.remote),
+    )
+
+
+def _defaults_from_env() -> NerRuntimeState:
+    """没有运行时文件时的界面初值：远端项来自 .env，本地项回落默认地址。"""
+    s = get_settings()
+    active = "remote" if s.HAS_TEXT_RUNTIME.strip().lower() in _REMOTE_ENV_RUNTIMES else "local"
+    return NerRuntimeState(
+        active=active,
+        local=TextModelProfile(
+            base_url=s.HAS_LLAMACPP_BASE_URL.strip() or DEFAULT_LOCAL_BASE_URL,
+        ),
+        remote=TextModelProfile(
+            base_url=(s.HAS_TEXT_EXTERNAL_BASE_URL or s.HAS_BASE_URL).strip(),
+            api_key=s.HAS_TEXT_API_KEY.strip(),
+            model_name=s.HAS_TEXT_MODEL_NAME.strip(),
+        ),
+    )
+
+
+def _ui_state() -> NerRuntimeState:
+    """设置页展示用：新格式直接展示；旧格式/无文件时与 .env 初值合并。"""
+    saved = load_ner_runtime_for_ui()
+    defaults = _defaults_from_env()
+    if saved is None:
+        return defaults
+    if load_ner_runtime() is not None:
+        return saved
+    return defaults.model_copy(
+        update={
+            "local": TextModelProfile(
+                base_url=saved.local.base_url or defaults.local.base_url,
+                model_name=saved.local.model_name or defaults.local.model_name,
+                display_name=saved.local.display_name,
+            )
+        }
+    )
+
+
+def _saved_vs_form_hint(profile: TextModelProfile) -> str | None:
     """侧栏健康检查读的是已保存配置；若与当前表单不一致，提示用户。"""
-    rt = load_ner_runtime()
-    if rt is None:
+    saved = load_ner_runtime()
+    if saved is None:
         return None
-    if rt.llamacpp_base_url.rstrip("/") != body.llamacpp_base_url.rstrip("/"):
+    if saved.profile().base_url.rstrip("/") != profile.base_url.rstrip("/"):
         return (
             "【说明】侧栏依据已保存的 API 地址；当前输入框地址与已保存不同，测试结果以输入框为准。"
         )
     return None
 
 
-def _effective_defaults() -> NerBackendRuntime:
-    s = get_settings()
-    return NerBackendRuntime(
-        llamacpp_base_url=s.HAS_LLAMACPP_BASE_URL,
-    )
+def _profile_headers(profile: TextModelProfile) -> dict[str, str] | None:
+    api_key = profile.api_key.strip()
+    return {"Authorization": f"Bearer {api_key}"} if api_key else None
 
 
-@router.get("", response_model=NerBackendRuntime)
+@router.get("", response_model=NerRuntimeState)
 async def get_ner_backend():
-    """当前 NER 配置（无 json 文件时返回与环境变量一致的默认值）。"""
-    rt = load_ner_runtime()
-    if rt is not None:
-        return rt
-    return _effective_defaults()
+    """当前文本模型配置：本地 / 远端两份 + 当前生效项。"""
+    return _mask_state(_ui_state())
 
 
-@router.put("", response_model=NerBackendRuntime)
-async def put_ner_backend(body: NerBackendRuntime):
-    """保存 NER 配置（立即生效，无需重启）。"""
-    _validate_base_url(body.llamacpp_base_url)
-    save_ner_runtime(body)
-    return body
+@router.put("", response_model=NerRuntimeState)
+async def put_ner_backend(body: NerRuntimeState):
+    """保存两份配置，并把 body.active 设为当前生效项（立即生效，无需重启）。"""
+    merged = _merge_state(body, _ui_state())
+    if not merged.profile().base_url.strip():
+        if merged.active != "local":
+            raise HTTPException(status_code=422, detail="远端模型地址不能为空")
+        merged.local = merged.local.model_copy(update={"base_url": DEFAULT_LOCAL_BASE_URL})
+    _validate_base_url(merged.profile().base_url)
+    save_ner_runtime(merged)
+    return _mask_state(merged)
 
 
 @router.delete("")
 async def delete_ner_backend():
     """删除运行时配置，恢复为环境变量 / .env 默认值。"""
-    import os
-
-    from app.core.config import get_settings
-    path = os.path.join(get_settings().DATA_DIR, "ner_backend.json")
-    if os.path.exists(path):
-        os.remove(path)
-    return {"ok": True, "message": "已清除前端覆盖，使用环境变量默认"}
+    removed = delete_ner_runtime()
+    message = "已清除前端覆盖，使用环境变量默认" if removed else "没有前端覆盖，当前即环境变量默认"
+    return {"ok": True, "message": message}
 
 
 @router.post("/test")
-async def test_ner_backend(body: NerBackendRuntime):
+async def test_ner_backend(body: NerRuntimeState):
     """
-    连通性测试（使用请求体中的配置，无需先保存）。
-    依次探测 /v1/models、models、health 等（不同 llama-server 构建路径不一）。
+    连通性测试（使用请求体中被测页签的配置，无需先保存）。
+    依次探测 /v1/models、models、health 等（不同 OpenAI 兼容服务路径不一）。
     """
-    _validate_base_url(body.llamacpp_base_url)
-    hint = _saved_vs_form_hint(body)
+    merged = _merge_state(body, _ui_state())
+    profile = merged.profile(body.active)
+    if not profile.base_url.strip():
+        raise HTTPException(status_code=422, detail="测试地址不能为空")
+    _validate_base_url(profile.base_url)
+    hint = _saved_vs_form_hint(profile)
     try:
-        ok, _probe_message, _used_url, strict = probe_llamacpp(body.llamacpp_base_url, timeout=8.0)
+        ok, probe_message, _used_url, strict = probe_llamacpp(
+            profile.base_url,
+            timeout=8.0,
+            headers=_profile_headers(profile),
+        )
         if not ok:
             return {
                 "success": False,
@@ -126,6 +210,8 @@ async def test_ner_backend(body: NerBackendRuntime):
             }
         if strict:
             ok_msg = "OpenAI 兼容接口正常"
+            if probe_message:
+                ok_msg = f"{ok_msg}（服务报告模型：{probe_message}）"
         else:
             ok_msg = "NER 后端服务正常"
         return {"success": True, "message": _with_hint(ok_msg, hint)}

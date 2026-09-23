@@ -317,8 +317,16 @@ def check_has_ner() -> tuple:
 
 
 def _has_text_runtime_detail() -> dict[str, Any]:
+    from app.core.config import (
+        get_has_chat_base_url,
+        get_has_text_model_name,
+        is_remote_text_runtime,
+    )
+    from app.core.ner_runtime import load_ner_runtime
+
+    runtime_state = load_ner_runtime()
     runtime = _runtime_config_value("HAS_TEXT_RUNTIME").lower()
-    if runtime == "external":
+    if is_remote_text_runtime():
         return {
             "runtime": "external OpenAI-compatible API",
             "runtime_mode": "remote-gpu",
@@ -329,10 +337,10 @@ def _has_text_runtime_detail() -> dict[str, Any]:
             "device": "remote",
             "cpu_fallback_risk": False,
             "runtime_expectation": "remote-openai",
-            "model": _runtime_config_value("HAS_TEXT_MODEL_NAME") or "external-model",
-            "base_url": _runtime_config_value("HAS_TEXT_EXTERNAL_BASE_URL"),
+            "model": get_has_text_model_name() or "external-model",
+            "base_url": get_has_chat_base_url(),
         }
-    if runtime == "vllm":
+    if runtime_state is None and runtime == "vllm":
         return {
             "runtime": "vllm server",
             "runtime_mode": "gpu",
@@ -440,9 +448,12 @@ def _read_dotenv_value(path: Path, name: str) -> str:
 
 def check_has_ner_health() -> ServiceHealth:
     """HaS Text status without exposing transient OpenAI-compatible server busy/loading copy."""
+    from app.core.config import configured_text_display_name
     from app.core.llamacpp_probe import probe_llamacpp
 
     default_name = get_has_display_name()
+    # 设置页显式选定的模型名优先于服务端自报的名字：用户保存成什么，主页就显示什么。
+    configured_name = configured_text_display_name()
     ok, name_or_detail, hit_url, strict = probe_llamacpp(
         get_has_chat_base_url(),
         timeout=3.0,
@@ -451,7 +462,7 @@ def check_has_ner_health() -> ServiceHealth:
     detail = _has_text_runtime_detail()
     detail.update({"strict_probe": strict, "probe_url": hit_url})
     if ok:
-        display_name = name_or_detail if strict else default_name
+        display_name = configured_name or (name_or_detail if strict else default_name)
         model_state = "ready" if strict else "responding_slowly"
         if not strict and name_or_detail:
             detail["probe_message"] = name_or_detail
